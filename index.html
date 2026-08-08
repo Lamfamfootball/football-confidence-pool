@@ -51,18 +51,24 @@ font-size: 16px;
 
 .game {
 border: 1px solid #ddd;
-border-radius: 8px;
+border-radius: 10px;
 padding: 15px;
 margin: 12px 0;
 }
 
 .game-title {
 font-weight: bold;
-margin-bottom: 10px;
+font-size: 17px;
+margin-bottom: 8px;
+}
+
+.spread {
+color: #555;
+margin-bottom: 12px;
 }
 
 button {
-padding: 12px 18px;
+padding: 10px 14px;
 border: none;
 border-radius: 7px;
 cursor: pointer;
@@ -78,13 +84,20 @@ background: #e5e7eb;
 background: #2563eb;
 color: white;
 }
-.points.selected {
-background: #2563eb;
-  color: white:
-  
-.points {
-background: #111827;
-color: white;
+
+select {
+padding: 10px;
+border-radius: 7px;
+border: 1px solid #bbb;
+font-size: 15px;
+margin: 4px;
+}
+
+.summary {
+background: #f9fafb;
+border-radius: 8px;
+padding: 15px;
+margin-top: 20px;
 }
 
 .submit {
@@ -98,6 +111,7 @@ font-size: 17px;
 .message {
 margin-top: 15px;
 font-weight: bold;
+text-align: center;
 }
 </style>
 </head>
@@ -106,7 +120,7 @@ font-weight: bold;
 
 <header>
 <h1>🏈 Lamfam 2026 Football Pool</h1>
-<p>Pick your Top 10 games</p>
+<p>Pick your Top 10 games against the spread</p>
 </header>
 
 <main>
@@ -124,11 +138,16 @@ placeholder="Your name"
 <h2>Week 1</h2>
 
 <p>
-Choose a team for each game and assign points from
-<strong>10 down to 1</strong>.
+Choose a team in each game and assign points
+from <strong>10 down to 1</strong>.
 </p>
 
 <div id="games"></div>
+
+<div class="summary">
+<strong>Points used:</strong>
+<div id="pointsUsed">None</div>
+</div>
 
 <button class="submit" onclick="submitPicks()">
 Submit My Picks
@@ -143,66 +162,16 @@ Submit My Picks
 <script>
 
 const games = [
-{
-id: 1,
-team1: "Team A",
-team2: "Team B",
-spread: "Team A -3.5"
-},
-{
-id: 2,
-team1: "Team C",
-team2: "Team D",
-spread: "Team C +2.5"
-},
-{
-id: 3,
-team1: "Team E",
-team2: "Team F",
-spread: "Team E -1.5"
-},
-{
-id: 4,
-team1: "Team G",
-team2: "Team H",
-spread: "Team H -4.5"
-},
-{
-id: 5,
-team1: "Team I",
-team2: "Team J",
-spread: "Team I +3.5"
-},
-{
-id: 6,
-team1: "Team K",
-team2: "Team L",
-spread: "Team L -2.5"
-},
-{
-id: 7,
-team1: "Team M",
-team2: "Team N",
-spread: "Team M -6.5"
-},
-{
-id: 8,
-team1: "Team O",
-team2: "Team P",
-spread: "Team P +1.5"
-},
-{
-id: 9,
-team1: "Team Q",
-team2: "Team R",
-spread: "Team Q -3.5"
-},
-{
-id: 10,
-team1: "Team S",
-team2: "Team T",
-spread: "Team T +5.5"
-}
+{ id: 1, team1: "Team A", team2: "Team B", spread: "Team A -3.5" },
+{ id: 2, team1: "Team C", team2: "Team D", spread: "Team C +2.5" },
+{ id: 3, team1: "Team E", team2: "Team F", spread: "Team E -1.5" },
+{ id: 4, team1: "Team G", team2: "Team H", spread: "Team H -4.5" },
+{ id: 5, team1: "Team I", team2: "Team J", spread: "Team I +3.5" },
+{ id: 6, team1: "Team K", team2: "Team L", spread: "Team L -2.5" },
+{ id: 7, team1: "Team M", team2: "Team N", spread: "Team M -6.5" },
+{ id: 8, team1: "Team O", team2: "Team P", spread: "Team P +1.5" },
+{ id: 9, team1: "Team Q", team2: "Team R", spread: "Team Q -3.5" },
+{ id: 10, team1: "Team S", team2: "Team T", spread: "Team T +5.5" }
 ];
 
 const selections = {};
@@ -222,11 +191,12 @@ div.innerHTML = `
 ${game.team1} vs ${game.team2}
 </div>
 
-<div>
+<div class="spread">
 Spread: ${game.spread}
 </div>
 
-<br>
+<div>
+<strong>Pick:</strong><br>
 
 <button
 class="team"
@@ -239,69 +209,25 @@ class="team"
 onclick="selectTeam(${game.id}, '${game.team2}', this)">
 ${game.team2}
 </button>
+</div>
 
-<br>
+<div style="margin-top:10px;">
+<strong>Points:</strong>
 
-<button
-class="points"
-onclick="selectPoints(${game.id}, 10, this)">
-10
-</button>
-
-<button
-class="points"
-onclick="selectPoints(${game.id}, 9, this)">
-9
-</button>
-
-<button
-class="points"
-onclick="selectPoints(${game.id}, 8, this)">
-8
-</button>
-
-<button
-class="points"
-onclick="selectPoints(${game.id}, 7, this)">
-7
-</button>
-
-<button
-class="points"
-onclick="selectPoints(${game.id}, 6, this)">
-6
-</button>
-
-<button
-class="points"
-onclick="selectPoints(${game.id}, 5, this)">
-5
-</button>
-
-<button
-class="points"
-onclick="selectPoints(${game.id}, 4, this)">
-4
-</button>
-
-<button
-class="points"
-onclick="selectPoints(${game.id}, 3, this)">
-3
-</button>
-
-<button
-class="points"
-onclick="selectPoints(${game.id}, 2, this)">
-2
-</button>
-
-<button
-class="points"
-onclick="selectPoints(${game.id}, 1, this)">
-1
-</button>
-
+<select onchange="selectPoints(${game.id}, this.value)">
+<option value="">Select</option>
+<option value="10">10</option>
+<option value="9">9</option>
+<option value="8">8</option>
+<option value="7">7</option>
+<option value="6">6</option>
+<option value="5">5</option>
+<option value="4">4</option>
+<option value="3">3</option>
+<option value="2">2</option>
+<option value="1">1</option>
+</select>
+</div>
 `;
 
 container.appendChild(div);
@@ -326,7 +252,27 @@ parent.querySelectorAll(".team")
 button.classList.add("selected");
 }
 
-function selectPoints(gameId, points, button) {
+function selectPoints(gameId, points) {
+
+if (!points) return;
+
+points = Number(points);
+
+const existingGame = Object.keys(selections).find(id =>
+Number(id) !== gameId &&
+selections[id].points === points
+);
+
+if (existingGame) {
+
+alert(
+"You already used " +
+points +
+" points. Each point value can only be used once."
+);
+
+return;
+}
 
 if (!selections[gameId]) {
 selections[gameId] = {};
@@ -334,12 +280,18 @@ selections[gameId] = {};
 
 selections[gameId].points = points;
 
-const parent = button.parentElement;
+updatePointsUsed();
+}
 
-parent.querySelectorAll(".points")
-.forEach(b => b.classList.remove("selected"));
+function updatePointsUsed() {
 
-button.classList.add("selected");
+const used = Object.values(selections)
+.map(p => p.points)
+.filter(Boolean)
+.sort((a,b) => b-a);
+
+document.getElementById("pointsUsed").innerText =
+used.length ? used.join(", ") : "None";
 }
 
 function submitPicks() {
@@ -360,19 +312,7 @@ const picks = Object.values(selections);
 if (picks.length !== 10) {
 
 document.getElementById("message").innerText =
-"Please make exactly 10 picks.";
-
-return;
-}
-
-const points = picks.map(p => p.points);
-
-const uniquePoints = new Set(points);
-
-if (uniquePoints.size !== 10) {
-
-document.getElementById("message").innerText =
-"You must use each point value from 10 through 1 exactly once.";
+"Please select exactly 10 games.";
 
 return;
 }
@@ -388,8 +328,30 @@ document.getElementById("message").innerText =
 return;
 }
 
+const points =
+picks.map(p => p.points);
+
+if (points.includes(undefined)) {
+
 document.getElementById("message").innerText =
-"Your picks are ready! Database submission will be added next.";
+"Please assign a point value to every pick.";
+
+return;
+}
+
+const uniquePoints =
+new Set(points);
+
+if (uniquePoints.size !== 10) {
+
+document.getElementById("message").innerText =
+"You must use each point value from 10 through 1 exactly once.";
+
+return;
+}
+
+document.getElementById("message").innerText =
+"Picks submitted successfully!";
 
 }
 
