@@ -3,23 +3,396 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NFL LamFam Football Pool</title>
+<title>Lamfam 2026 Football Pool</title>
+
+<style>
+body {
+margin: 0;
+font-family: Arial, sans-serif;
+background: #f3f4f6;
+color: #111827;
+}
+
+header {
+background: #111827;
+color: white;
+text-align: center;
+padding: 25px 15px;
+}
+
+header h1 {
+margin: 0;
+font-size: 30px;
+}
+
+main {
+max-width: 700px;
+margin: 25px auto;
+padding: 15px;
+}
+
+.card {
+background: white;
+border-radius: 12px;
+padding: 25px;
+margin-bottom: 20px;
+box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+}
+
+input {
+width: 100%;
+padding: 12px;
+margin: 8px 0 20px;
+box-sizing: border-box;
+border: 1px solid #ccc;
+border-radius: 6px;
+font-size: 16px;
+}
+
+.game {
+border: 1px solid #ddd;
+border-radius: 8px;
+padding: 15px;
+margin: 12px 0;
+}
+
+.game-title {
+font-weight: bold;
+margin-bottom: 10px;
+}
+
+button {
+padding: 12px 18px;
+border: none;
+border-radius: 7px;
+cursor: pointer;
+font-size: 15px;
+margin: 4px;
+}
+
+.team {
+background: #e5e7eb;
+}
+
+.team.selected {
+background: #2563eb;
+color: white;
+}
+
+.points {
+background: #111827;
+color: white;
+}
+
+.submit {
+background: #16a34a;
+color: white;
+width: 100%;
+margin-top: 20px;
+font-size: 17px;
+}
+
+.message {
+margin-top: 15px;
+font-weight: bold;
+}
+</style>
 </head>
 
 <body>
-<h1>🏈 NFL LamFam Football Pool</h1>
 
-<h2>2026 Football Pool</h2>
+<header>
+<h1>🏈 Lamfam 2026 Football Pool</h1>
+<p>Pick your Top 10 games</p>
+</header>
+
+<main>
+
+<div class="card">
+
+<h2>Enter Your Name</h2>
+
+<input
+type="text"
+id="playerName"
+placeholder="Your name"
+>
+
+<h2>Week 1</h2>
 
 <p>
-Pick your Top 10 games against the spread.
+Choose a team for each game and assign points from
+<strong>10 down to 1</strong>.
 </p>
 
-<p>
-Your #1 pick is worth 10 points.
-Your #10 pick is worth 1 point.
-</p>
+<div id="games"></div>
 
-<button>Make Your Picks</button>
+<button class="submit" onclick="submitPicks()">
+Submit My Picks
+</button>
+
+<div id="message" class="message"></div>
+
+</div>
+
+</main>
+
+<script>
+
+const games = [
+{
+id: 1,
+team1: "Team A",
+team2: "Team B",
+spread: "Team A -3.5"
+},
+{
+id: 2,
+team1: "Team C",
+team2: "Team D",
+spread: "Team C +2.5"
+},
+{
+id: 3,
+team1: "Team E",
+team2: "Team F",
+spread: "Team E -1.5"
+},
+{
+id: 4,
+team1: "Team G",
+team2: "Team H",
+spread: "Team H -4.5"
+},
+{
+id: 5,
+team1: "Team I",
+team2: "Team J",
+spread: "Team I +3.5"
+},
+{
+id: 6,
+team1: "Team K",
+team2: "Team L",
+spread: "Team L -2.5"
+},
+{
+id: 7,
+team1: "Team M",
+team2: "Team N",
+spread: "Team M -6.5"
+},
+{
+id: 8,
+team1: "Team O",
+team2: "Team P",
+spread: "Team P +1.5"
+},
+{
+id: 9,
+team1: "Team Q",
+team2: "Team R",
+spread: "Team Q -3.5"
+},
+{
+id: 10,
+team1: "Team S",
+team2: "Team T",
+spread: "Team T +5.5"
+}
+];
+
+const selections = {};
+
+function displayGames() {
+
+const container = document.getElementById("games");
+
+games.forEach(game => {
+
+const div = document.createElement("div");
+
+div.className = "game";
+
+div.innerHTML = `
+<div class="game-title">
+${game.team1} vs ${game.team2}
+</div>
+
+<div>
+Spread: ${game.spread}
+</div>
+
+<br>
+
+<button
+class="team"
+onclick="selectTeam(${game.id}, '${game.team1}', this)">
+${game.team1}
+</button>
+
+<button
+class="team"
+onclick="selectTeam(${game.id}, '${game.team2}', this)">
+${game.team2}
+</button>
+
+<br>
+
+<button
+class="points"
+onclick="selectPoints(${game.id}, 10, this)">
+10
+</button>
+
+<button
+class="points"
+onclick="selectPoints(${game.id}, 9, this)">
+9
+</button>
+
+<button
+class="points"
+onclick="selectPoints(${game.id}, 8, this)">
+8
+</button>
+
+<button
+class="points"
+onclick="selectPoints(${game.id}, 7, this)">
+7
+</button>
+
+<button
+class="points"
+onclick="selectPoints(${game.id}, 6, this)">
+6
+</button>
+
+<button
+class="points"
+onclick="selectPoints(${game.id}, 5, this)">
+5
+</button>
+
+<button
+class="points"
+onclick="selectPoints(${game.id}, 4, this)">
+4
+</button>
+
+<button
+class="points"
+onclick="selectPoints(${game.id}, 3, this)">
+3
+</button>
+
+<button
+class="points"
+onclick="selectPoints(${game.id}, 2, this)">
+2
+</button>
+
+<button
+class="points"
+onclick="selectPoints(${game.id}, 1, this)">
+1
+</button>
+
+`;
+
+container.appendChild(div);
+
+});
+
+}
+
+function selectTeam(gameId, team, button) {
+
+if (!selections[gameId]) {
+selections[gameId] = {};
+}
+
+selections[gameId].team = team;
+
+const parent = button.parentElement;
+
+parent.querySelectorAll(".team")
+.forEach(b => b.classList.remove("selected"));
+
+button.classList.add("selected");
+}
+
+function selectPoints(gameId, points, button) {
+
+if (!selections[gameId]) {
+selections[gameId] = {};
+}
+
+selections[gameId].points = points;
+
+const parent = button.parentElement;
+
+parent.querySelectorAll(".points")
+.forEach(b => b.classList.remove("selected"));
+
+button.classList.add("selected");
+}
+
+function submitPicks() {
+
+const name =
+document.getElementById("playerName").value.trim();
+
+if (!name) {
+
+document.getElementById("message").innerText =
+"Please enter your name.";
+
+return;
+}
+
+const picks = Object.values(selections);
+
+if (picks.length !== 10) {
+
+document.getElementById("message").innerText =
+"Please make exactly 10 picks.";
+
+return;
+}
+
+const points = picks.map(p => p.points);
+
+const uniquePoints = new Set(points);
+
+if (uniquePoints.size !== 10) {
+
+document.getElementById("message").innerText =
+"You must use each point value from 10 through 1 exactly once.";
+
+return;
+}
+
+const missingTeam =
+picks.some(p => !p.team);
+
+if (missingTeam) {
+
+document.getElementById("message").innerText =
+"Please select a team for every pick.";
+
+return;
+}
+
+document.getElementById("message").innerText =
+"Your picks are ready! Database submission will be added next.";
+
+}
+
+displayGames();
+
+</script>
+
 </body>
 </html>
