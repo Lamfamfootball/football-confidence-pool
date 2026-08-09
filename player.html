@@ -58,7 +58,45 @@ const supabaseClient = supabase.createClient(
 SUPABASE_URL,
 SUPABASE_KEY
 );
+function validatePicks() {
+const picks = document.querySelectorAll(".pick-team");
+const confidence = document.querySelectorAll(".confidence");
 
+let selectedPicks = 0;
+const points = [];
+
+picks.forEach((pick, index) => {
+if (pick.value !== "") {
+selectedPicks++;
+
+if (confidence[index].value !== "") {
+points.push(Number(confidence[index].value));
+}
+}
+});
+
+if (selectedPicks !== 10) {
+alert("You must select exactly 10 games.");
+return false;
+}
+
+if (points.length !== 10) {
+alert("Each selected game must have a confidence value.");
+return false;
+}
+
+const uniquePoints = new Set(points);
+
+if (uniquePoints.size !== 10) {
+alert("You must use each confidence value from 10 through 1 exactly once.");
+return false;
+}
+
+alert("Picks are valid!");
+return true;
+}
+
+loadGames();
 async function loadGames() {
 const { data, error } = await supabaseClient
 .from("games")
