@@ -121,7 +121,7 @@ confidence: Number(confidence[index].value)
 });
 
 const { error } = await supabaseClient
-.from("picks")
+.from("Picks")
 .insert(rows);
 
 if (error) {
