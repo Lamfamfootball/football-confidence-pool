@@ -87,14 +87,43 @@ const div = document.createElement("div");
 div.className = "game";
 
 div.innerHTML = `
-<div>Game ${index + 1}</div>
+<div><strong>Game ${index + 1}</strong></div>
 <div class="team">${game.team1}</div>
 <div>vs.</div>
 <div class="team">${game.team2}</div>
 <div>Spread: ${game.spread}</div>
+
+<label>
+Pick:
+<select class="pick-team" data-game-id="${game.id}">
+<option value="">Choose a team</option>
+<option value="${game.team1}">${game.team1}</option>
+<option value="${game.team2}">${game.team2}</option>
+</select>
+</label>
+
+<label>
+Confidence:
+<select class="confidence" data-game-id="${game.id}">
+<option value="">Points</option>
+<option value="10">10</option>
+<option value="9">9</option>
+<option value="8">8</option>
+<option value="7">7</option>
+<option value="6">6</option>
+<option value="5">5</option>
+<option value="4">4</option>
+<option value="3">3</option>
+<option value="2">2</option>
+<option value="1">1</option>
+</select>
+</label>
 `;
 
 gameList.appendChild(div);
+
+
+
 });
 }
 
