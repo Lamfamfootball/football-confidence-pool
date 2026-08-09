@@ -120,7 +120,7 @@ confidence: Number(confidence[index].value)
 });
 });
 
-const { error } = await supabase
+const { error } = await supabaseClient
 .from("picks")
 .insert(rows);
 
