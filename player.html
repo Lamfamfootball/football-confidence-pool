@@ -47,7 +47,9 @@ margin: auto;
 <p id="status">Loading games...</p>
 <div id="gameList"></div>
 </div>
-
+<button type="button" onclick="validatePicks()">
+Submit Picks
+</button>
 <script>
 const SUPABASE_URL = "https://bgkcnsnydchfghyhwurw.supabase.co";
 const SUPABASE_KEY = "sb_publishable_CzYkbEOaBmQbXroYYOXDbA_6NX6kZLz";
@@ -126,7 +128,38 @@ gameList.appendChild(div);
 
 });
 }
+function validatePicks() {
+const picks = document.querySelectorAll(".pick-team");
+const confidence = document.querySelectorAll(".confidence");
 
+let selectedPicks = 0;
+const points = [];
+
+picks.forEach((pick, index) => {
+if (pick.value !== "") {
+selectedPicks++;
+if (confidence[index].value !== "") {
+points.push(Number(confidence[index].value));
+}
+}
+});
+
+if (selectedPicks !== 10) {
+alert("You must select exactly 10 games.");
+return false;
+}
+
+const required = [1,2,3,4,5,6,7,8,9,10];
+points.sort((a, b) => a - b);
+
+if (points.length !== 10 ||
+points.some((value, index) => value !== required[index])) {
+alert("You must use each confidence value from 10 through 1 exactly once.");
+return false;
+}
+
+return true;
+}
 loadGames();
 </script>
 
