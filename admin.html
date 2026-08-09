@@ -148,51 +148,69 @@ placeholder="Example: Chiefs -3.5"
 `;
 
 }
+async function saveWeek() {
 
-function saveWeek() {
-
-const week =
-document.getElementById("week").value;
-
+const week = document.getElementById("week").value;
 const games = [];
 
 for (let i = 1; i <= 18; i++) {
 
-const team1 =
-document.getElementById(`team1-${i}`).value.trim();
-
-const team2 =
-document.getElementById(`team2-${i}`).value.trim();
-
-const spread =
-document.getElementById(`spread-${i}`).value.trim();
+const team1 = document.getElementById(`team1-${i}`).value.trim();
+const team2 = document.getElementById(`team2-${i}`).value.trim();
+const spread = document.getElementById(`spread-${i}`).value.trim();
 
 if (team1 && team2) {
-
 games.push({
+week: parseInt(week),
 team1: team1,
 team2: team2,
 spread: spread
 });
-
+}
 }
 
+if (games.length === 0) {
+document.getElementById("message").innerText =
+"Please enter at least one game.";
+return;
 }
 
-localStorage.setItem(
-"lamfamWeek",
-JSON.stringify({
-week: week,
-games: games
-})
-);
+const { error } = await supabaseClient
+.from("games")
+.delete()
+.eq("week", parseInt(week));
+
+if (error) {
+document.getElementById("message").innerText =
+"Error: " + error.message;
+return;
+}
+
+const { error: insertError } = await supabaseClient
+.from("games")
+.insert(games);
+
+if (insertError) {
+document.getElementById("message").innerText =
+"Error: " + insertError.message;
+return;
+}
 
 document.getElementById("message").innerText =
 "Week " + week + " saved successfully!";
-
 }
 
 </script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+<script>
+const SUPABASE_URL = "https://bgkcnsnydchfghyhwurw.supabase.co";
+const SUPABASE_KEY = "sb_publishable_CzYkbEOaBmQbXroYYOXDbA_6NX6kZLz";
+
+const supabaseClient = supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+</script>
 </body>
 </html>
