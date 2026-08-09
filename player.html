@@ -47,7 +47,7 @@ margin: auto;
 <p id="status">Loading games...</p>
 <div id="gameList"></div>
 </div>
-<button type="button" onclick="validatePicks()">
+<button type="button" onclick="submitPicks()">
 Submit Picks
 </button>
 <script>
@@ -95,7 +95,43 @@ return false;
 alert("Picks are valid"!");
 return true;
 }
+async function submitPicks() {
+if (!validatePicks()) {
+return;
+}
 
+const playerName = prompt("Enter your name:");
+
+if (!playerName) {
+return;
+}
+
+const picks = document.querySelectorAll(".pick-team");
+const confidence = document.querySelectorAll(".confidence");
+
+const rows = [];
+
+picks.forEach((pick, index) => {
+rows.push({
+player_name: playerName,
+game_id: Number(pick.dataset.gameId),
+team_picked: pick.value,
+confidence: Number(confidence[index].value)
+});
+});
+
+const { error } = await supabase
+.from("picks")
+.insert(rows);
+
+if (error) {
+console.error(error);
+alert("There was an error saving your picks.");
+return;
+}
+
+alert("Picks submitted successfully!");
+}
 loadGames();
 async function loadGames() {
 const { data, error } = await supabaseClient
