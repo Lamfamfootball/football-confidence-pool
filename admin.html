@@ -223,7 +223,74 @@ return;
 document.getElementById("message").innerText =
 "Week " + week + " saved successfully!";
 }
+async function loadResults() {
 
+const week = parseInt(
+document.getElementById("resultsWeek").value
+);
+
+const resultsContainer =
+document.getElementById("results");
+
+const message =
+document.getElementById("resultsMessage");
+
+resultsContainer.innerHTML = "";
+message.innerText = "Loading games...";
+
+const { data, error } = await supabaseClient
+.from("games")
+.select("*")
+.eq("week", week)
+.order("id");
+
+if (error) {
+message.innerText =
+"Error: " + error.message;
+return;
+}
+
+if (!data || data.length === 0) {
+message.innerText =
+"No games found for Week " + week + ".";
+return;
+}
+
+message.innerText = "";
+
+data.forEach(game => {
+
+resultsContainer.innerHTML += `
+<div class="game">
+
+<h3>
+${game.team1} vs ${game.team2}
+</h3>
+
+<p>
+Spread: ${game.spread || "N/A"}
+</p>
+
+<label>Winner</label>
+
+<select id="winner-${game.id}">
+<option value="">
+Select winner
+</option>
+
+<option value="${game.team1}">
+${game.team1}
+</option>
+
+<option value="${game.team2}">
+${game.team2}
+</option>
+</select>
+
+</div>
+`;
+});
+}
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
