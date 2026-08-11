@@ -3,9 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>Lamfam Admin</title>
 
 <style>
+
 body {
 margin: 0;
 font-family: Arial, sans-serif;
@@ -34,7 +36,8 @@ margin-bottom: 20px;
 box-shadow: 0 3px 12px rgba(0,0,0,0.08);
 }
 
-input {
+input,
+select {
 width: 100%;
 padding: 12px;
 margin: 6px 0 15px;
@@ -69,14 +72,34 @@ margin: 15px 0;
 h3 {
 margin-top: 0;
 }
+
+.success {
+color: #15803d;
+font-weight: bold;
+}
+
+.error {
+color: #dc2626;
+font-weight: bold;
+}
+
+hr {
+margin: 30px 0;
+border: 0;
+border-top: 1px solid #ddd;
+}
+
 </style>
 </head>
 
 <body>
 
 <header>
+
 <h1>🏈 Lamfam Admin</h1>
-<p>Set up the weekly football games</p>
+
+<p>Set up weekly football games and enter results</p>
+
 </header>
 
 <main>
@@ -86,6 +109,7 @@ margin-top: 0;
 <h2>Week Setup</h2>
 
 <label>Week Number</label>
+
 <input
 type="number"
 id="week"
@@ -96,12 +120,18 @@ max="18"
 
 <div id="games"></div>
 
-<button class="save" onclick="saveWeek()">
+<button
+class="save"
+onclick="saveWeek()"
+>
 Save Week
 </button>
 
 <p id="message"></p>
+
+
 <hr>
+
 
 <h2>Game Results</h2>
 
@@ -123,14 +153,37 @@ onclick="loadResults()"
 Load Games
 </button>
 
+<p id="resultsMessage"></p>
+
 <div id="results"></div>
 
-<p id="resultsMessage"></p>
 </div>
 
 </main>
 
+
+<!-- SUPABASE -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script>
+
+const SUPABASE_URL =
+"https://bgkcnsnydchfghyhwurw.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_CzYkbEOaBmQbXroYYOXDbA_6NX6kZLz";
+
+const supabaseClient =
+supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+
+
+// --------------------------------------------------
+// CREATE WEEK SETUP FIELDS
+// --------------------------------------------------
 
 const gamesContainer =
 document.getElementById("games");
@@ -172,96 +225,169 @@ placeholder="Example: Chiefs -3.5"
 `;
 
 }
+
+
+// --------------------------------------------------
+// SAVE WEEK
+// --------------------------------------------------
+
 async function saveWeek() {
 
-const week = document.getElementById("week").value;
+const week =
+document.getElementById("week").value;
+
 const games = [];
+
 
 for (let i = 1; i <= 18; i++) {
 
-const team1 = document.getElementById(`team1-${i}`).value.trim();
-const team2 = document.getElementById(`team2-${i}`).value.trim();
-const spread = document.getElementById(`spread-${i}`).value.trim();
+const team1 =
+document
+.getElementById(`team1-${i}`)
+.value
+.trim();
+
+const team2 =
+document
+.getElementById(`team2-${i}`)
+.value
+.trim();
+
+const spread =
+document
+.getElementById(`spread-${i}`)
+.value
+.trim();
+
 
 if (team1 && team2) {
+
 games.push({
+
 week: parseInt(week),
+
 team1: team1,
+
 team2: team2,
+
 spread: spread
+
 });
+
 }
+
 }
+
 
 if (games.length === 0) {
+
 document.getElementById("message").innerText =
 "Please enter at least one game.";
+
 return;
+
 }
 
-const { error } = await supabaseClient
+
+const { error } =
+await supabaseClient
 .from("games")
 .delete()
 .eq("week", parseInt(week));
 
+
 if (error) {
+
 document.getElementById("message").innerText =
 "Error: " + error.message;
+
 return;
+
 }
 
-const { error: insertError } = await supabaseClient
+
+const { error: insertError } =
+await supabaseClient
 .from("games")
 .insert(games);
 
+
 if (insertError) {
+
 document.getElementById("message").innerText =
 "Error: " + insertError.message;
+
 return;
+
 }
+
 
 document.getElementById("message").innerText =
 "Week " + week + " saved successfully!";
+
 }
+
+
+// --------------------------------------------------
+// LOAD RESULTS
+// --------------------------------------------------
+
 async function loadResults() {
 
-const week = parseInt(
+const week =
+parseInt(
 document.getElementById("resultsWeek").value
 );
 
-  
+
 const resultsContainer =
 document.getElementById("results");
 
 const message =
 document.getElementById("resultsMessage");
 
-resultsContainer.innerHTML = "";
-message.innerText = "Loading games...";
 
-const { data, error } = await supabaseClient
+resultsContainer.innerHTML = "";
+
+message.innerText =
+"Loading games...";
+
+
+const { data, error } =
+await supabaseClient
 .from("games")
 .select("*")
 .eq("week", week)
 .order("id");
 
+
 if (error) {
+
 message.innerText =
 "Error: " + error.message;
+
 return;
+
 }
+
 
 if (!data || data.length === 0) {
+
 message.innerText =
 "No games found for Week " + week + ".";
+
 return;
+
 }
 
+
 message.innerText = "";
+
 
 data.forEach(game => {
 
 resultsContainer.innerHTML += `
+
 <div class="game">
 
 <h3>
@@ -269,40 +395,177 @@ ${game.team1} vs ${game.team2}
 </h3>
 
 <p>
-Spread: ${game.spread || "N/A"}
+Spread:
+${game.spread || "N/A"}
 </p>
 
-<label>Winner</label>
+<label>
+Winner
+</label>
 
-<select id="winner-${game.id}">
+<select
+id="winner-${game.id}"
+>
+
 <option value="">
 Select winner
 </option>
 
-<option value="${game.team1}">
+<option
+value="${game.team1}"
+${game.winner === game.team1 ? "selected" : ""}
+>
 ${game.team1}
 </option>
 
-<option value="${game.team2}">
+<option
+value="${game.team2}"
+${game.winner === game.team2 ? "selected" : ""}
+>
 ${game.team2}
 </option>
+
 </select>
 
 </div>
+
 `;
+
 });
+
+
+resultsContainer.innerHTML += `
+
+<button
+type="button"
+class="save"
+onclick="saveResults()"
+>
+Save Results
+</button>
+
+`;
+
 }
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
-<script>
-const SUPABASE_URL = "https://bgkcnsnydchfghyhwurw.supabase.co";
-const SUPABASE_KEY = "sb_publishable_CzYkbEOaBmQbXroYYOXDbA_6NX6kZLz";
 
-const supabaseClient = supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY
+// --------------------------------------------------
+// SAVE RESULTS
+// --------------------------------------------------
+
+async function saveResults() {
+
+const week =
+parseInt(
+document.getElementById("resultsWeek").value
 );
+
+
+const { data: games, error: loadError } =
+await supabaseClient
+.from("games")
+.select("id, team1, team2, winner")
+.eq("week", week)
+.order("id");
+
+
+if (loadError) {
+
+document.getElementById("resultsMessage").innerText =
+"Error loading games: " +
+loadError.message;
+
+return;
+
+}
+
+
+if (!games || games.length === 0) {
+
+document.getElementById("resultsMessage").innerText =
+"No games found.";
+
+return;
+
+}
+
+
+const updates = [];
+
+
+for (const game of games) {
+
+const select =
+document.getElementById(
+`winner-${game.id}`
+);
+
+
+if (!select) {
+continue;
+}
+
+
+const winner =
+select.value;
+
+
+if (winner) {
+
+updates.push({
+
+id: game.id,
+
+winner: winner
+
+});
+
+}
+
+}
+
+
+if (updates.length === 0) {
+
+document.getElementById("resultsMessage").innerText =
+"Please select at least one winner.";
+
+return;
+
+}
+
+
+for (const update of updates) {
+
+const { error } =
+await supabaseClient
+.from("games")
+.update({
+winner: update.winner
+})
+.eq("id", update.id);
+
+
+if (error) {
+
+document.getElementById("resultsMessage").innerText =
+"Error saving results: " +
+error.message;
+
+return;
+
+}
+
+}
+
+
+document.getElementById("resultsMessage").innerText =
+"Week " + week +
+" results saved successfully!";
+
+}
+
 </script>
+
 </body>
 </html>
