@@ -129,9 +129,7 @@ Save Week
 
 <p id="message"></p>
 
-
 <hr>
-
 
 <h2>Game Results</h2>
 
@@ -162,8 +160,6 @@ Load Games
 </main>
 
 
-<!-- SUPABASE -->
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <script>
@@ -181,9 +177,9 @@ SUPABASE_KEY
 );
 
 
-// --------------------------------------------------
+// ==================================================
 // CREATE WEEK SETUP FIELDS
-// --------------------------------------------------
+// ==================================================
 
 const gamesContainer =
 document.getElementById("games");
@@ -227,9 +223,9 @@ placeholder="Example: Chiefs -3.5"
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // SAVE WEEK
-// --------------------------------------------------
+// ==================================================
 
 async function saveWeek() {
 
@@ -328,9 +324,9 @@ document.getElementById("message").innerText =
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // LOAD RESULTS
-// --------------------------------------------------
+// ==================================================
 
 async function loadResults() {
 
@@ -356,7 +352,7 @@ message.innerText =
 const { data, error } =
 await supabaseClient
 .from("games")
-.select("*")
+.select("id,team1,team2,spread,Winner")
 .eq("week", week)
 .order("id");
 
@@ -413,14 +409,14 @@ Select winner
 
 <option
 value="${game.team1}"
-${game.winner === game.team1 ? "selected" : ""}
+${game.Winner === game.team1 ? "selected" : ""}
 >
 ${game.team1}
 </option>
 
 <option
 value="${game.team2}"
-${game.winner === game.team2 ? "selected" : ""}
+${game.Winner === game.team2 ? "selected" : ""}
 >
 ${game.team2}
 </option>
@@ -449,9 +445,9 @@ Save Results
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // SAVE RESULTS
-// --------------------------------------------------
+// ==================================================
 
 async function saveResults() {
 
@@ -464,7 +460,7 @@ document.getElementById("resultsWeek").value
 const { data: games, error: loadError } =
 await supabaseClient
 .from("games")
-.select("id, team1, team2, winner")
+.select("id,team1,team2,Winner")
 .eq("week", week)
 .order("id");
 
@@ -490,7 +486,7 @@ return;
 }
 
 
-const updates = [];
+let savedCount = 0;
 
 
 for (const game of games) {
@@ -510,40 +506,18 @@ const winner =
 select.value;
 
 
-if (winner) {
-
-updates.push({
-
-id: game.id,
-
-winner: winner
-
-});
-
+if (!winner) {
+continue;
 }
 
-}
-
-
-if (updates.length === 0) {
-
-document.getElementById("resultsMessage").innerText =
-"Please select at least one winner.";
-
-return;
-
-}
-
-
-for (const update of updates) {
 
 const { error } =
 await supabaseClient
 .from("games")
 .update({
-winner: update.winner
+Winner: winner
 })
-.eq("id", update.id);
+.eq("id", game.id);
 
 
 if (error) {
@@ -555,6 +529,19 @@ error.message;
 return;
 
 }
+
+
+savedCount++;
+
+}
+
+
+if (savedCount === 0) {
+
+document.getElementById("resultsMessage").innerText =
+"Please select at least one winner.";
+
+return;
 
 }
 
