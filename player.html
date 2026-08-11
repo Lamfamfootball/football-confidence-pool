@@ -11,100 +11,100 @@
 <style>
 
 body {
-font-family: Arial, sans-serif;
-margin: 0;
-background: #f4f4f4;
-color: #111827;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  background: #f4f4f4;
+  color: #111827;
 }
 
 header {
-background: #111827;
-color: white;
-text-align: center;
-padding: 25px 15px;
+  background: #111827;
+  color: white;
+  text-align: center;
+  padding: 25px 15px;
 }
 
 main {
-max-width: 700px;
-margin: 20px auto;
-padding: 15px;
+  max-width: 700px;
+  margin: 20px auto;
+  padding: 15px;
 }
 
 .card {
-background: white;
-padding: 20px;
-margin-bottom: 20px;
-border-radius: 10px;
-box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  background: white;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
 }
 
 .game {
-background: white;
-padding: 15px;
-margin-bottom: 12px;
-border-radius: 8px;
-border: 1px solid #ddd;
+  background: white;
+  padding: 15px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
 }
 
 .team {
-font-weight: bold;
-font-size: 18px;
-margin: 5px 0;
+  font-weight: bold;
+  font-size: 18px;
+  margin: 5px 0;
 }
 
-select,
-input {
-width: 100%;
-padding: 10px;
-margin-top: 6px;
-margin-bottom: 12px;
-box-sizing: border-box;
-border: 1px solid #ccc;
-border-radius: 6px;
-font-size: 16px;
+select {
+  width: 100%;
+  padding: 10px;
+  margin-top: 6px;
+  margin-bottom: 12px;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
 }
 
 label {
-display: block;
-margin-top: 10px;
+  display: block;
+  margin-top: 10px;
 }
 
 button {
-width: 100%;
-padding: 13px;
-border: none;
-border-radius: 7px;
-background: #16a34a;
-color: white;
-font-size: 17px;
-cursor: pointer;
-margin-top: 10px;
+  width: 100%;
+  padding: 13px;
+  border: none;
+  border-radius: 7px;
+  background: #16a34a;
+  color: white;
+  font-size: 17px;
+  cursor: pointer;
+  margin-top: 10px;
 }
 
 button:hover {
-opacity: 0.9;
+  opacity: 0.9;
 }
 
 #status {
-font-weight: bold;
+  font-weight: bold;
 }
 
 .success {
-color: #15803d;
-font-weight: bold;
+  color: #15803d;
+  font-weight: bold;
 }
 
 .error {
-color: #dc2626;
-font-weight: bold;
+  color: #dc2626;
+  font-weight: bold;
 }
 
 .summary {
-background: #f0fdf4;
-border: 1px solid #bbf7d0;
-padding: 12px;
-border-radius: 8px;
-margin-bottom: 15px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  padding: 12px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  line-height: 1.8;
 }
 
 </style>
@@ -133,12 +133,12 @@ confidence points <strong>1–10</strong>.
 
 <div class="summary">
 
-<strong>Selected:</strong>
+<strong>Selected games:</strong>
 <span id="selectedCount">0</span> / 10
 
 <br>
 
-<strong>Confidence points used:</strong>
+<strong>Confidence points assigned:</strong>
 <span id="pointsUsed">0</span> / 10
 
 </div>
@@ -314,9 +314,6 @@ gameList.appendChild(div);
 
 });
 
-
-// Update counter whenever a selection changes
-
 document
 .querySelectorAll(".pick-team, .confidence")
 .forEach(select => {
@@ -347,7 +344,7 @@ document.querySelectorAll(".confidence");
 
 let selectedCount = 0;
 
-let pointsUsed = 0;
+let pointsAssigned = 0;
 
 picks.forEach((pick, index) => {
 
@@ -357,8 +354,7 @@ selectedCount++;
 
 if (confidence[index].value !== "") {
 
-pointsUsed +=
-Number(confidence[index].value);
+pointsAssigned++;
 
 }
 
@@ -374,7 +370,7 @@ selectedCount;
 document.getElementById(
 "pointsUsed"
 ).innerText =
-pointsUsed;
+pointsAssigned;
 
 }
 
@@ -413,9 +409,6 @@ Number(confidence[index].value)
 
 });
 
-
-// Must select exactly 10 games
-
 if (selectedPicks !== 10) {
 
 alert(
@@ -425,9 +418,6 @@ alert(
 return false;
 
 }
-
-
-// Every selected game needs confidence points
 
 if (points.length !== 10) {
 
@@ -439,10 +429,6 @@ return false;
 
 }
 
-
-// Must use 1 through 10 exactly once
-
-const sorted =
 points.sort(
 (a, b) => a - b
 );
@@ -457,7 +443,7 @@ i++
 ) {
 
 if (
-sorted[i] !== required[i]
+points[i] !== required[i]
 ) {
 
 alert(
@@ -494,9 +480,6 @@ return;
 
 }
 
-
-// Ask for player name
-
 const playerName =
 prompt(
 "Enter your name:"
@@ -507,7 +490,6 @@ if (!playerName) {
 return;
 
 }
-
 
 const picks =
 document.querySelectorAll(
@@ -520,7 +502,6 @@ document.querySelectorAll(
 );
 
 const rows = [];
-
 
 picks.forEach(
 (pick, index) => {
@@ -552,14 +533,10 @@ confidence[index].value
 }
 );
 
-
-// Save picks
-
 const { error } =
 await supabaseClient
 .from("Picks")
 .insert(rows);
-
 
 if (error) {
 
@@ -575,7 +552,6 @@ error.message;
 return;
 
 }
-
 
 message.className =
 "success";
