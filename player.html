@@ -3,15 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
 <title>LamFam Football Pool</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+
 body {
 font-family: Arial, sans-serif;
-margin: 20px;
+margin: 0;
 background: #f4f4f4;
+color: #111827;
+}
+
+header {
+background: #111827;
+color: white;
+text-align: center;
+padding: 25px 15px;
+}
+
+main {
+max-width: 700px;
+margin: 20px auto;
+padding: 15px;
+}
+
+.card {
+background: white;
+padding: 20px;
+margin-bottom: 20px;
+border-radius: 10px;
+box-shadow: 0 3px 10px rgba(0,0,0,0.08);
 }
 
 .game {
@@ -19,169 +43,257 @@ background: white;
 padding: 15px;
 margin-bottom: 12px;
 border-radius: 8px;
+border: 1px solid #ddd;
 }
 
 .team {
 font-weight: bold;
 font-size: 18px;
+margin: 5px 0;
 }
 
-.pick-button {
-margin-top: 8px;
-padding: 8px 12px;
+select,
+input {
+width: 100%;
+padding: 10px;
+margin-top: 6px;
+margin-bottom: 12px;
+box-sizing: border-box;
+border: 1px solid #ccc;
+border-radius: 6px;
+font-size: 16px;
+}
+
+label {
+display: block;
+margin-top: 10px;
+}
+
+button {
+width: 100%;
+padding: 13px;
+border: none;
+border-radius: 7px;
+background: #16a34a;
+color: white;
+font-size: 17px;
 cursor: pointer;
+margin-top: 10px;
 }
 
-#games {
-max-width: 700px;
-margin: auto;
+button:hover {
+opacity: 0.9;
 }
+
+#status {
+font-weight: bold;
+}
+
+.success {
+color: #15803d;
+font-weight: bold;
+}
+
+.error {
+color: #dc2626;
+font-weight: bold;
+}
+
+.summary {
+background: #f0fdf4;
+border: 1px solid #bbf7d0;
+padding: 12px;
+border-radius: 8px;
+margin-bottom: 15px;
+}
+
 </style>
 </head>
 
 <body>
 
-<div id="games">
-<h1>LamFam Football Pool</h1>
-<h2>Week 1</h2>
-<p id="status">Loading games...</p>
-<div id="gameList"></div>
+<header>
+
+<h1>🏈 LamFam Football Pool</h1>
+
+<p id="weekTitle">Week 1</p>
+
+</header>
+
+<main>
+
+<div class="card">
+
+<h2>Make Your Picks</h2>
+
+<p>
+Choose exactly <strong>10 games</strong> and assign
+confidence points <strong>1–10</strong>.
+</p>
+
+<div class="summary">
+
+<strong>Selected:</strong>
+<span id="selectedCount">0</span> / 10
+
+<br>
+
+<strong>Confidence points used:</strong>
+<span id="pointsUsed">0</span> / 10
+
 </div>
-<button type="button" onclick="submitPicks()">
+
+<p id="status">Loading games...</p>
+
+<div id="gameList"></div>
+
+<button
+type="button"
+onclick="submitPicks()"
+>
 Submit Picks
 </button>
-<script>
-const SUPABASE_URL = "https://bgkcnsnydchfghyhwurw.supabase.co";
-const SUPABASE_KEY = "sb_publishable_CzYkbEOaBmQbXroYYOXDbA_6NX6kZLz";
 
-const supabaseClient = supabase.createClient(
+<p id="submitMessage"></p>
+
+</div>
+
+</main>
+
+<script>
+
+// ==================================================
+// SUPABASE
+// ==================================================
+
+const SUPABASE_URL =
+"https://bgkcnsnydchfghyhwurw.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_CzYkbEOaBmQbXroYYOXDbA_6NX6kZLz";
+
+const supabaseClient =
+supabase.createClient(
 SUPABASE_URL,
 SUPABASE_KEY
 );
-function validatePicks() {
-const picks = document.querySelectorAll(".pick-team");
-const confidence = document.querySelectorAll(".confidence");
 
-let selectedPicks = 0;
-const points = [];
 
-picks.forEach((pick, index) => {
-if (pick.value !== "") {
-selectedPicks++;
+// ==================================================
+// CURRENT WEEK
+// ==================================================
 
-if (confidence[index].value !== "") {
-points.push(Number(confidence[index].value));
-}
-}
-});
+const CURRENT_WEEK = 1;
 
-if (selectedPicks !== 10) {
-alert("You must select exactly 10 games.");
-return false;
-}
 
-if (points.length !== 10) {
-alert("Each selected game must have a confidence value.");
-return false;
-}
+// ==================================================
+// LOAD GAMES
+// ==================================================
 
-const uniquePoints = new Set(points);
-
-if (uniquePoints.size !== 10) {
-alert("You must use each confidence value from 10 through 1 exactly once.");
-return false;
-}
-
-alert("Picks are valid!");
-return true;
-}
-async function submitPicks() {
-if (!validatePicks()) {
-return;
-}
-
-const playerName = prompt("Enter your name:");
-
-if (!playerName) {
-return;
-}
-
-const picks = document.querySelectorAll(".pick-team");
-const confidence = document.querySelectorAll(".confidence");
-
-const rows = [];
-
-picks.forEach((pick, index) => {
-rows.push({
-"player-name": playerName,
-game_id: Number(pick.dataset.gameId),
-"team-picked": pick.value,
-confidence: Number(confidence[index].value)
-});
-});
-
-const { error } = await supabaseClient
-.from("Picks")
-.insert(rows);
-
-if (error) {
-console.error(error);
-alert("There was an error saving your picks.");
-return;
-}
-
-alert("Picks submitted successfully!");
-}
-loadGames();
 async function loadGames() {
-const { data, error } = await supabaseClient
+
+const status =
+document.getElementById("status");
+
+const gameList =
+document.getElementById("gameList");
+
+status.innerText =
+"Loading games...";
+
+const { data, error } =
+await supabaseClient
 .from("games")
-.select("*")
-.eq("week", 1)
+.select("id,team1,team2,spread")
+.eq("week", CURRENT_WEEK)
 .order("id");
 
 if (error) {
-console.error(error);
-document.getElementById("status").innerText =
-"Unable to load games.";
-return;
-}
 
-const gameList = document.getElementById("gameList");
-gameList.innerHTML = "";
+console.error(error);
+
+status.innerText =
+"Unable to load games.";
+
+return;
+
+}
 
 if (!data || data.length === 0) {
-document.getElementById("status").innerText =
+
+status.innerText =
 "No games have been entered yet.";
+
 return;
+
 }
 
-document.getElementById("status").innerText = "";
+status.innerText = "";
+
+gameList.innerHTML = "";
 
 data.forEach((game, index) => {
-const div = document.createElement("div");
-div.className = "game";
+
+const div =
+document.createElement("div");
+
+div.className =
+"game";
 
 div.innerHTML = `
-<div><strong>Game ${index + 1}</strong></div>
-<div class="team">${game.team1}</div>
-<div>vs.</div>
-<div class="team">${game.team2}</div>
-<div>Spread: ${game.spread}</div>
+
+<div>
+<strong>Game ${index + 1}</strong>
+</div>
+
+<div class="team">
+${game.team1}
+</div>
+
+<div>
+vs.
+</div>
+
+<div class="team">
+${game.team2}
+</div>
+
+<div>
+Spread:
+${game.spread || "N/A"}
+</div>
 
 <label>
 Pick:
-<select class="pick-team" data-game-id="${game.id}">
-<option value="">Choose a team</option>
-<option value="${game.team1}">${game.team1}</option>
-<option value="${game.team2}">${game.team2}</option>
+<select
+class="pick-team"
+data-game-id="${game.id}"
+>
+<option value="">
+Choose a team
+</option>
+
+<option value="${game.team1}">
+${game.team1}
+</option>
+
+<option value="${game.team2}">
+${game.team2}
+</option>
+
 </select>
 </label>
 
 <label>
 Confidence:
-<select class="confidence" data-game-id="${game.id}">
-<option value="">Points</option>
+<select
+class="confidence"
+data-game-id="${game.id}"
+>
+<option value="">
+Points
+</option>
+
 <option value="10">10</option>
 <option value="9">9</option>
 <option value="8">8</option>
@@ -192,49 +304,294 @@ Confidence:
 <option value="3">3</option>
 <option value="2">2</option>
 <option value="1">1</option>
+
 </select>
 </label>
+
 `;
 
 gameList.appendChild(div);
 
+});
 
+
+// Update counter whenever a selection changes
+
+document
+.querySelectorAll(".pick-team, .confidence")
+.forEach(select => {
+
+select.addEventListener(
+"change",
+updateSummary
+);
 
 });
+
+updateSummary();
+
 }
+
+
+// ==================================================
+// UPDATE SUMMARY
+// ==================================================
+
+function updateSummary() {
+
+const picks =
+document.querySelectorAll(".pick-team");
+
+const confidence =
+document.querySelectorAll(".confidence");
+
+let selectedCount = 0;
+
+let pointsUsed = 0;
+
+picks.forEach((pick, index) => {
+
+if (pick.value !== "") {
+
+selectedCount++;
+
+if (confidence[index].value !== "") {
+
+pointsUsed +=
+Number(confidence[index].value);
+
+}
+
+}
+
+});
+
+document.getElementById(
+"selectedCount"
+).innerText =
+selectedCount;
+
+document.getElementById(
+"pointsUsed"
+).innerText =
+pointsUsed;
+
+}
+
+
+// ==================================================
+// VALIDATE PICKS
+// ==================================================
+
 function validatePicks() {
-const picks = document.querySelectorAll(".pick-team");
-const confidence = document.querySelectorAll(".confidence");
+
+const picks =
+document.querySelectorAll(".pick-team");
+
+const confidence =
+document.querySelectorAll(".confidence");
 
 let selectedPicks = 0;
+
 const points = [];
 
 picks.forEach((pick, index) => {
+
 if (pick.value !== "") {
+
 selectedPicks++;
+
 if (confidence[index].value !== "") {
-points.push(Number(confidence[index].value));
+
+points.push(
+Number(confidence[index].value)
+);
+
 }
+
 }
+
 });
 
+
+// Must select exactly 10 games
+
 if (selectedPicks !== 10) {
-alert("You must select exactly 10 games.");
+
+alert(
+"You must select exactly 10 games."
+);
+
 return false;
+
 }
 
-const required = [1,2,3,4,5,6,7,8,9,10];
-points.sort((a, b) => a - b);
 
-if (points.length !== 10 || new Set(points).size !== 10) {
-alert("You must use each confidence value from 10 through 1 exactly once.");
+// Every selected game needs confidence points
+
+if (points.length !== 10) {
+
+alert(
+"Each selected game must have a confidence value."
+);
+
 return false;
+
 }
 
-alert("Picks are valid!");
+
+// Must use 1 through 10 exactly once
+
+const sorted =
+points.sort(
+(a, b) => a - b
+);
+
+const required =
+[1,2,3,4,5,6,7,8,9,10];
+
+for (
+let i = 0;
+i < required.length;
+i++
+) {
+
+if (
+sorted[i] !== required[i]
+) {
+
+alert(
+"You must use each confidence value from 1 through 10 exactly once."
+);
+
+return false;
+
+}
+
+}
+
 return true;
+
 }
+
+
+// ==================================================
+// SUBMIT PICKS
+// ==================================================
+
+async function submitPicks() {
+
+const message =
+document.getElementById(
+"submitMessage"
+);
+
+message.innerText = "";
+
+if (!validatePicks()) {
+
+return;
+
+}
+
+
+// Ask for player name
+
+const playerName =
+prompt(
+"Enter your name:"
+);
+
+if (!playerName) {
+
+return;
+
+}
+
+
+const picks =
+document.querySelectorAll(
+".pick-team"
+);
+
+const confidence =
+document.querySelectorAll(
+".confidence"
+);
+
+const rows = [];
+
+
+picks.forEach(
+(pick, index) => {
+
+if (pick.value !== "") {
+
+rows.push({
+
+"player-name":
+playerName.trim(),
+
+game_id:
+Number(
+pick.dataset.gameId
+),
+
+"team-picked":
+pick.value,
+
+confidence:
+Number(
+confidence[index].value
+)
+
+});
+
+}
+
+}
+);
+
+
+// Save picks
+
+const { error } =
+await supabaseClient
+.from("Picks")
+.insert(rows);
+
+
+if (error) {
+
+console.error(error);
+
+message.className =
+"error";
+
+message.innerText =
+"Error saving picks: " +
+error.message;
+
+return;
+
+}
+
+
+message.className =
+"success";
+
+message.innerText =
+"Picks submitted successfully!";
+
+}
+
+
+// ==================================================
+// START
+// ==================================================
+
 loadGames();
+
 </script>
 
 </body>
