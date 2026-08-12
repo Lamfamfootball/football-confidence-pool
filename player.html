@@ -11,100 +11,111 @@
 <style>
 
 body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background: #f4f4f4;
-  color: #111827;
+font-family: Arial, sans-serif;
+margin: 0;
+background: #f4f4f4;
+color: #111827;
 }
 
 header {
-  background: #111827;
-  color: white;
-  text-align: center;
-  padding: 25px 15px;
+background: #111827;
+color: white;
+text-align: center;
+padding: 25px 15px;
 }
 
 main {
-  max-width: 700px;
-  margin: 20px auto;
-  padding: 15px;
+max-width: 700px;
+margin: 20px auto;
+padding: 15px;
 }
 
 .card {
-  background: white;
-  padding: 20px;
-  margin-bottom: 20px;
-  border-radius: 10px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+background: white;
+padding: 20px;
+margin-bottom: 20px;
+border-radius: 10px;
+box-shadow: 0 3px 10px rgba(0,0,0,0.08);
 }
 
 .game {
-  background: white;
-  padding: 15px;
-  margin-bottom: 12px;
-  border-radius: 8px;
-  border: 1px solid #ddd;
+background: white;
+padding: 15px;
+margin-bottom: 12px;
+border-radius: 8px;
+border: 1px solid #ddd;
 }
 
 .team {
-  font-weight: bold;
-  font-size: 18px;
-  margin: 5px 0;
+font-weight: bold;
+font-size: 18px;
+margin: 5px 0;
 }
 
 select {
-  width: 100%;
-  padding: 10px;
-  margin-top: 6px;
-  margin-bottom: 12px;
-  box-sizing: border-box;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 16px;
+width: 100%;
+padding: 10px;
+margin-top: 6px;
+margin-bottom: 12px;
+box-sizing: border-box;
+border: 1px solid #ccc;
+border-radius: 6px;
+font-size: 16px;
 }
 
 label {
-  display: block;
-  margin-top: 10px;
+display: block;
+margin-top: 10px;
 }
 
 button {
-  width: 100%;
-  padding: 13px;
-  border: none;
-  border-radius: 7px;
-  background: #16a34a;
-  color: white;
-  font-size: 17px;
-  cursor: pointer;
-  margin-top: 10px;
+width: 100%;
+padding: 13px;
+border: none;
+border-radius: 7px;
+background: #16a34a;
+color: white;
+font-size: 17px;
+cursor: pointer;
+margin-top: 10px;
 }
 
 button:hover {
-  opacity: 0.9;
+opacity: 0.9;
 }
 
 #status {
-  font-weight: bold;
+font-weight: bold;
 }
 
 .success {
-  color: #15803d;
-  font-weight: bold;
+color: #15803d;
+font-weight: bold;
 }
 
 .error {
-  color: #dc2626;
-  font-weight: bold;
+color: #dc2626;
+font-weight: bold;
 }
 
 .summary {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  padding: 12px;
-  border-radius: 8px;
-  margin-bottom: 15px;
-  line-height: 1.8;
+background: #f0fdf4;
+border: 1px solid #bbf7d0;
+padding: 12px;
+border-radius: 8px;
+margin-bottom: 15px;
+line-height: 1.8;
+}
+
+.week-selector {
+background: #f9fafb;
+padding: 15px;
+border-radius: 8px;
+margin-bottom: 20px;
+}
+
+.load-button {
+background: #2563eb;
 }
 
 </style>
@@ -116,7 +127,7 @@ button:hover {
 
 <h1>🏈 LamFam Football Pool</h1>
 
-<p id="weekTitle">Week 1</p>
+<p>Weekly Football Picks</p>
 
 </header>
 
@@ -124,7 +135,50 @@ button:hover {
 
 <div class="card">
 
-<h2>Make Your Picks</h2>
+<h2>Choose Your Week</h2>
+
+<div class="week-selector">
+
+<label>
+Week
+</label>
+
+<select id="weekSelect">
+
+<option value="1">Week 1</option>
+<option value="2">Week 2</option>
+<option value="3">Week 3</option>
+<option value="4">Week 4</option>
+<option value="5">Week 5</option>
+<option value="6">Week 6</option>
+<option value="7">Week 7</option>
+<option value="8">Week 8</option>
+<option value="9">Week 9</option>
+<option value="10">Week 10</option>
+<option value="11">Week 11</option>
+<option value="12">Week 12</option>
+<option value="13">Week 13</option>
+<option value="14">Week 14</option>
+<option value="15">Week 15</option>
+<option value="16">Week 16</option>
+<option value="17">Week 17</option>
+<option value="18">Week 18</option>
+
+</select>
+
+<button
+type="button"
+class="load-button"
+onclick="loadSelectedWeek()"
+>
+Load Week
+</button>
+
+</div>
+
+<h2 id="weekTitle">
+Week 1
+</h2>
 
 <p>
 Choose exactly <strong>10 games</strong> and assign
@@ -143,7 +197,9 @@ confidence points <strong>1–10</strong>.
 
 </div>
 
-<p id="status">Loading games...</p>
+<p id="status">
+Loading games...
+</p>
 
 <div id="gameList"></div>
 
@@ -180,10 +236,42 @@ SUPABASE_KEY
 
 
 // ==================================================
-// CURRENT WEEK
+// CURRENT SELECTED WEEK
 // ==================================================
 
-const CURRENT_WEEK = 1;
+let currentWeek = 1;
+
+
+// ==================================================
+// LOAD SELECTED WEEK
+// ==================================================
+
+function loadSelectedWeek() {
+
+const weekSelect =
+document.getElementById("weekSelect");
+
+currentWeek =
+parseInt(weekSelect.value);
+
+document.getElementById(
+"weekTitle"
+).innerText =
+"Week " + currentWeek;
+
+document.getElementById(
+"gameList"
+).innerHTML = "";
+
+document.getElementById(
+"submitMessage"
+).innerText = "";
+
+updateSummary();
+
+loadGames();
+
+}
 
 
 // ==================================================
@@ -205,7 +293,7 @@ const { data, error } =
 await supabaseClient
 .from("games")
 .select("id,team1,team2,spread")
-.eq("week", CURRENT_WEEK)
+.eq("week", currentWeek)
 .order("id");
 
 if (error) {
@@ -213,7 +301,8 @@ if (error) {
 console.error(error);
 
 status.innerText =
-"Unable to load games.";
+"Unable to load games: " +
+error.message;
 
 return;
 
@@ -222,7 +311,9 @@ return;
 if (!data || data.length === 0) {
 
 status.innerText =
-"No games have been entered yet.";
+"No games have been entered yet for Week " +
+currentWeek +
+".";
 
 return;
 
@@ -524,7 +615,10 @@ pick.value,
 confidence:
 Number(
 confidence[index].value
-)
+),
+
+week:
+currentWeek
 
 });
 
@@ -532,6 +626,11 @@ confidence[index].value
 
 }
 );
+
+
+// ==================================================
+// SAVE PICKS
+// ==================================================
 
 const { error } =
 await supabaseClient
@@ -557,7 +656,9 @@ message.className =
 "success";
 
 message.innerText =
-"Picks submitted successfully!";
+"Week " +
+currentWeek +
+" picks submitted successfully!";
 
 }
 
