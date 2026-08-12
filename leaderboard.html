@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>LamFam Football Pool Leaderboard</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+
+body {
+font-family: Arial, sans-serif;
+margin: 0;
+background: #f4f4f4;
+color: #111827;
+}
+
+header {
+background: #111827;
+color: white;
+text-align: center;
+padding: 25px 15px;
+}
+
+main {
+max-width: 700px;
+margin: 20px auto;
+padding: 15px;
+}
+
+.card {
+background: white;
+padding: 20px;
+margin-bottom: 20px;
+border-radius: 10px;
+box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+select {
+width: 100%;
+padding: 10px;
+margin: 8px 0 15px;
+box-sizing: border-box;
+border: 1px solid #ccc;
+border-radius: 6px;
+font-size: 16px;
+}
+
+button {
+width: 100%;
+padding: 13px;
+border: none;
+border-radius: 7px;
+background: #2563eb;
+color: white;
+font-size: 17px;
+cursor: pointer;
+}
+
+button:hover {
+opacity: 0.9;
+}
+
+table {
+width: 100%;
+border-collapse: collapse;
+margin-top: 15px;
+}
+
+th,
+td {
+padding: 12px 8px;
+border-bottom: 1px solid #ddd;
+text-align: center;
+}
+
+th {
+background: #111827;
+color: white;
+}
+
+td:first-child,
+th:first-child {
+text-align: left;
+}
+
+.rank {
+font-weight: bold;
+}
+
+#status {
+font-weight: bold;
+}
+
+.success {
+color: #15803d;
+}
+
+.error {
+color: #dc2626;
+}
+
+.total {
+font-weight: bold;
+font-size: 18px;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+
+<h1>🏈 LamFam Football Pool</h1>
+
+<p>Leaderboard</p>
+
+</header>
+
+<main>
+
+<div class="card">
+
+<h2>Choose Week</h2>
+
+<select id="weekSelect">
+
+<option value="1">Week 1</option>
+<option value="2">Week 2</option>
+<option value="3">Week 3</option>
+<option value="4">Week 4</option>
+<option value="5">Week 5</option>
+<option value="6">Week 6</option>
+<option value="7">Week 7</option>
+<option value="8">Week 8</option>
+<option value="9">Week 9</option>
+<option value="10">Week 10</option>
+<option value="11">Week 11</option>
+<option value="12">Week 12</option>
+<option value="13">Week 13</option>
+<option value="14">Week 14</option>
+<option value="15">Week 15</option>
+<option value="16">Week 16</option>
+<option value="17">Week 17</option>
+<option value="18">Week 18</option>
+
+</select>
+
+<button
+type="button"
+onclick="loadLeaderboard()"
+>
+Load Leaderboard
+</button>
+
+<p id="status">
+Loading...
+</p>
+
+</div>
+
+
+<div class="card">
+
+<h2 id="leaderboardTitle">
+Week 1 Standings
+</h2>
+
+<div id="leaderboard"></div>
+
+</div>
+
+</main>
+
+
+<script>
+
+// ==================================================
+// SUPABASE
+// ==================================================
+
+const SUPABASE_URL =
+"https://bgkcnsnydchfghyhwurw.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_CzYkbEOaBmQbXroYYOXDbA_6NX6kZLz";
+
+const supabaseClient =
+supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+
+
+// ==================================================
+// LOAD LEADERBOARD
+// ==================================================
+
+async function loadLeaderboard() {
+
+const week =
+parseInt(
+document.getElementById(
+"weekSelect"
+).value
+);
+
+const status =
+document.getElementById(
+"status"
+);
+
+const leaderboard =
+document.getElementById(
+"leaderboard"
+);
+
+status.className = "";
+
+status.innerText =
+"Loading scores...";
+
+leaderboard.innerHTML = "";
+
+
+// ==================================================
+// GET GAMES FOR WEEK
+// ==================================================
+
+const { data: games, error: gamesError } =
+await supabaseClient
+.from("games")
+.select("id,Winner")
+.eq("week", week);
+
+if (gamesError) {
+
+console.error(gamesError);
+
+status.className =
+"error";
+
+status.innerText =
+"Error loading games: " +
+gamesError.message;
+
+return;
+
+}
+
+
+// ==================================================
+// GET PICKS FOR WEEK
+// ==================================================
+
+const { data: picks, error: picksError } =
+await supabaseClient
+.from("Picks")
+.select(
+"player-name,game_id,team-picked,confidence,week"
+)
+.eq("week", week);
+
+if (picksError) {
+
+console.error(picksError);
+
+status.className =
+"error";
+
+status.innerText =
+"Error loading picks: " +
+picksError.message;
+
+return;
+
+}
+
+
+if (!picks || picks.length === 0) {
+
+status.innerText =
+"No picks have been submitted for Week " +
+week +
+".";
+
+return;
+
+}
+
+
+// ==================================================
+// CALCULATE SCORES
+// ==================================================
+
+const scores = {};
+
+
+// Create quick game lookup
+
+const gameMap = {};
+
+games.forEach(game => {
+
+gameMap[game.id] =
+game.Winner;
+
+});
+
+
+picks.forEach(pick => {
+
+const player =
+pick["player-name"];
+
+if (!scores[player]) {
+
+scores[player] = {
+
+score: 0,
+
+correct: 0,
+
+games: 0
+
+};
+
+}
+
+scores[player].games++;
+
+const winner =
+gameMap[pick.game_id];
+
+
+// Only award points if a winner
+// has been entered by the admin
+
+if (
+winner &&
+pick["team-picked"] === winner
+) {
+
+scores[player].score +=
+Number(pick.confidence);
+
+scores[player].correct++;
+
+}
+
+});
+
+
+// ==================================================
+// SORT PLAYERS
+// ==================================================
+
+const players =
+Object.keys(scores);
+
+players.sort(
+(a, b) =>
+scores[b].score -
+scores[a].score
+);
+
+
+// ==================================================
+// DISPLAY
+// ==================================================
+
+document.getElementById(
+"leaderboardTitle"
+).innerText =
+"Week " +
+week +
+" Standings";
+
+let html = `
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Rank</th>
+
+<th>Player</th>
+
+<th>Score</th>
+
+<th>Correct</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+`;
+
+players.forEach(
+(player, index) => {
+
+html += `
+
+<tr>
+
+<td class="rank">
+${index + 1}
+</td>
+
+<td>
+${player}
+</td>
+
+<td class="total">
+${scores[player].score}
+</td>
+
+<td>
+${scores[player].correct}
+/
+${scores[player].games}
+</td>
+
+</tr>
+
+`;
+
+});
+
+html += `
+
+</tbody>
+
+</table>
+
+`;
+
+leaderboard.innerHTML =
+html;
+
+status.className =
+"success";
+
+status.innerText =
+"Scores loaded successfully.";
+
+}
+
+
+// ==================================================
+// START
+// ==================================================
+
+loadLeaderboard();
+
+</script>
+
+</body>
+</html>
