@@ -391,9 +391,9 @@ let html = `
 
 <th>Player</th>
 
-<th>Score</th>
+<th>Wins</th>
 
-<th>Correct</th>
+<th>Confidence Points</th>
 
 </tr>
 
@@ -419,13 +419,13 @@ ${player}
 </td>
 
 <td class="total">
-${scores[player].score}
+${scores[player].correct}
 </td>
 
 <td>
-${scores[player].correct}
-/
 ${scores[player].games}
+/
+${scores[player].score}
 </td>
 
 </tr>
