@@ -9,7 +9,6 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-
 body {
 font-family: Arial, sans-serif;
 margin: 0;
@@ -59,10 +58,6 @@ font-size: 17px;
 cursor: pointer;
 }
 
-button:hover {
-opacity: 0.9;
-}
-
 table {
 width: 100%;
 border-collapse: collapse;
@@ -107,23 +102,24 @@ color: #15803d;
 color: #dc2626;
 }
 
+.winner {
+font-weight: bold;
+font-size: 18px;
+}
+
 </style>
 </head>
 
 <body>
 
 <header>
-
 <h1>🏈 LamFam Football Pool</h1>
-
 <p>Leaderboard</p>
-
 </header>
-
 
 <main>
 
-<!-- WEEKLY LEADERBOARD -->
+<!-- WEEKLY STANDINGS -->
 
 <div class="card">
 
@@ -152,16 +148,11 @@ color: #dc2626;
 
 </select>
 
-<button
-type="button"
-onclick="loadLeaderboard()"
->
+<button type="button" onclick="loadLeaderboard()">
 Load Week
 </button>
 
-<p id="status">
-Loading...
-</p>
+<p id="status">Loading...</p>
 
 </div>
 
@@ -177,7 +168,7 @@ Week 1 Standings
 </div>
 
 
-<!-- SEASON LEADERBOARD -->
+<!-- SEASON STANDINGS -->
 
 <div class="card">
 
@@ -185,6 +176,19 @@ Week 1 Standings
 
 <div id="seasonLeaderboard">
 Loading season standings...
+</div>
+
+</div>
+
+
+<!-- WEEKLY WINNERS -->
+
+<div class="card">
+
+<h2>🏆 Weekly Winners</h2>
+
+<div id="weeklyWinners">
+Loading weekly winners...
 </div>
 
 </div>
@@ -219,20 +223,14 @@ async function loadLeaderboard() {
 
 const week =
 parseInt(
-document.getElementById(
-"weekSelect"
-).value
+document.getElementById("weekSelect").value
 );
 
 const status =
-document.getElementById(
-"status"
-);
+document.getElementById("status");
 
 const leaderboard =
-document.getElementById(
-"leaderboard"
-);
+document.getElementById("leaderboard");
 
 status.className = "";
 
@@ -242,7 +240,7 @@ status.innerText =
 leaderboard.innerHTML = "";
 
 
-// Get games
+// GET GAMES
 
 const { data: games, error: gamesError } =
 await supabaseClient
@@ -254,8 +252,7 @@ if (gamesError) {
 
 console.error(gamesError);
 
-status.className =
-"error";
+status.className = "error";
 
 status.innerText =
 "Error loading games: " +
@@ -266,7 +263,7 @@ return;
 }
 
 
-// Get picks
+// GET PICKS
 
 const { data: picks, error: picksError } =
 await supabaseClient
@@ -280,8 +277,7 @@ if (picksError) {
 
 console.error(picksError);
 
-status.className =
-"error";
+status.className = "error";
 
 status.innerText =
 "Error loading picks: " +
@@ -304,9 +300,7 @@ return;
 }
 
 
-// Calculate scores
-
-const scores = {};
+// GAME LOOKUP
 
 const gameMap = {};
 
@@ -317,6 +311,10 @@ game.Winner;
 
 });
 
+
+// PLAYER SCORES
+
+const scores = {};
 
 picks.forEach(pick => {
 
@@ -357,13 +355,13 @@ scores[player].correct++;
 });
 
 
-// Sort by correct picks first
+// SORT BY WINS
 
 const players =
 Object.keys(scores);
 
 players.sort(
-(a, b) => {
+(a,b) => {
 
 if (
 scores[b].correct !==
@@ -385,7 +383,7 @@ scores[a].score
 });
 
 
-// Display weekly leaderboard
+// DISPLAY
 
 document.getElementById(
 "leaderboardTitle"
@@ -401,22 +399,19 @@ let html = `
 <thead>
 
 <tr>
-
 <th>Rank</th>
 <th>Player</th>
 <th>Wins</th>
 <th>Confidence Points</th>
-
 </tr>
 
 </thead>
 
 <tbody>
-
 `;
 
 players.forEach(
-(player, index) => {
+(player,index) => {
 
 html += `
 
@@ -439,17 +434,13 @@ ${scores[player].score}
 </td>
 
 </tr>
-
 `;
 
 });
 
 html += `
-
 </tbody>
-
 </table>
-
 `;
 
 leaderboard.innerHTML =
@@ -465,7 +456,7 @@ status.innerText =
 
 
 // ==================================================
-// LOAD SEASON LEADERBOARD
+// SEASON STANDINGS
 // ==================================================
 
 async function loadSeasonLeaderboard() {
@@ -476,18 +467,16 @@ document.getElementById(
 );
 
 
-// Get all games
+// GET GAMES
 
 const { data: games, error: gamesError } =
 await supabaseClient
 .from("games")
 .select("id,week,Winner")
-.gte("week", 1)
-.lte("week", 18);
+.gte("week",1)
+.lte("week",18);
 
 if (gamesError) {
-
-console.error(gamesError);
 
 season.innerHTML =
 "<p class='error'>Unable to load season games.</p>";
@@ -497,7 +486,7 @@ return;
 }
 
 
-// Get only picks that have a valid week
+// GET VALID PICKS
 
 const { data: picks, error: picksError } =
 await supabaseClient
@@ -505,12 +494,10 @@ await supabaseClient
 .select(
 "player-name,game_id,team-picked,confidence,week"
 )
-.gte("week", 1)
-.lte("week", 18);
+.gte("week",1)
+.lte("week",18);
 
 if (picksError) {
-
-console.error(picksError);
 
 season.innerHTML =
 "<p class='error'>Unable to load season picks.</p>";
@@ -530,39 +517,28 @@ return;
 }
 
 
-// Create game lookup
+// GAME LOOKUP
 
 const gameMap = {};
 
 games.forEach(game => {
 
-gameMap[game.id] = {
-
-week: game.week,
-
-winner: game.Winner
-
-};
+gameMap[game.id] = game.Winner;
 
 });
 
 
-// Calculate season wins
+// CALCULATE TOTALS
 
 const players = {};
-
 
 picks.forEach(pick => {
 
 const player =
 pick["player-name"];
 
-const game =
+const winner =
 gameMap[pick.game_id];
-
-if (!game) {
-return;
-}
 
 if (!players[player]) {
 
@@ -576,11 +552,9 @@ points: 0
 
 }
 
-
 if (
-game.winner &&
-pick["team-picked"] ===
-game.winner
+winner &&
+pick["team-picked"] === winner
 ) {
 
 players[player].wins++;
@@ -593,13 +567,13 @@ Number(pick.confidence);
 });
 
 
-// Sort by total wins
+// SORT BY TOTAL WINS
 
 const names =
 Object.keys(players);
 
 names.sort(
-(a, b) => {
+(a,b) => {
 
 if (
 players[b].wins !==
@@ -621,7 +595,7 @@ players[a].points
 });
 
 
-// Display
+// DISPLAY
 
 let html = `
 
@@ -630,22 +604,19 @@ let html = `
 <thead>
 
 <tr>
-
 <th>Rank</th>
 <th>Player</th>
 <th>Total Wins</th>
 <th>Confidence Points</th>
-
 </tr>
 
 </thead>
 
 <tbody>
-
 `;
 
 names.forEach(
-(player, index) => {
+(player,index) => {
 
 html += `
 
@@ -668,21 +639,231 @@ ${players[player].points}
 </td>
 
 </tr>
-
 `;
 
 });
 
 html += `
-
 </tbody>
-
 </table>
-
 `;
 
 season.innerHTML =
 html;
+
+}
+
+
+// ==================================================
+// WEEKLY WINNERS
+// ==================================================
+
+async function loadWeeklyWinners() {
+
+const container =
+document.getElementById(
+"weeklyWinners"
+);
+
+
+// GET GAMES
+
+const { data: games, error: gamesError } =
+await supabaseClient
+.from("games")
+.select("id,week,Winner")
+.gte("week",1)
+.lte("week",18);
+
+if (gamesError) {
+
+container.innerHTML =
+"<p class='error'>Unable to load weekly winners.</p>";
+
+return;
+
+}
+
+
+// GET PICKS
+
+const { data: picks, error: picksError } =
+await supabaseClient
+.from("Picks")
+.select(
+"player-name,game_id,team-picked,confidence,week"
+)
+.gte("week",1)
+.lte("week",18);
+
+if (picksError) {
+
+container.innerHTML =
+"<p class='error'>Unable to load weekly winners.</p>";
+
+return;
+
+}
+
+
+// GAME LOOKUP
+
+const gameMap = {};
+
+games.forEach(game => {
+
+gameMap[game.id] = {
+
+week: game.week,
+
+winner: game.Winner
+
+};
+
+});
+
+
+// CALCULATE WEEKLY POINTS
+
+const weekly = {};
+
+picks.forEach(pick => {
+
+const player =
+pick["player-name"];
+
+const game =
+gameMap[pick.game_id];
+
+if (!game || !game.winner) {
+return;
+}
+
+const week =
+game.week;
+
+if (!weekly[week]) {
+weekly[week] = {};
+}
+
+if (!weekly[week][player]) {
+weekly[week][player] = 0;
+}
+
+if (
+pick["team-picked"] ===
+game.winner
+) {
+
+weekly[week][player] +=
+Number(pick.confidence);
+
+}
+
+});
+
+
+// CREATE TABLE
+
+let html = `
+
+<table>
+
+<thead>
+
+<tr>
+<th>Week</th>
+<th>Winner</th>
+<th>Confidence Points</th>
+</tr>
+
+</thead>
+
+<tbody>
+`;
+
+for (
+let week = 1;
+week <= 18;
+week++
+) {
+
+if (!weekly[week]) {
+continue;
+}
+
+const players =
+Object.keys(weekly[week]);
+
+if (players.length === 0) {
+continue;
+}
+
+
+let highest = 0;
+
+players.forEach(player => {
+
+if (
+weekly[week][player] >
+highest
+) {
+
+highest =
+weekly[week][player];
+
+}
+
+});
+
+
+const winners =
+players.filter(
+player =>
+weekly[week][player] ===
+highest
+);
+
+
+html += `
+
+<tr>
+
+<td>
+Week ${week}
+</td>
+
+<td class="winner">
+${winners.join(", ")}
+</td>
+
+<td>
+${highest}
+</td>
+
+</tr>
+`;
+
+}
+
+html += `
+</tbody>
+</table>
+`;
+
+if (
+html.includes("<tbody>\n</tbody>")
+) {
+
+container.innerHTML =
+"<p>No weekly winners yet.</p>";
+
+} else {
+
+container.innerHTML =
+html;
+
+}
 
 }
 
@@ -694,6 +875,8 @@ html;
 loadLeaderboard();
 
 loadSeasonLeaderboard();
+
+loadWeeklyWinners();
 
 </script>
 
