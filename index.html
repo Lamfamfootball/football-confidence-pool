@@ -170,7 +170,33 @@ const response = await fetch(
 );
 
 if (!response.ok) {
-throw new Error("Could not load NFL games.");
+throw new Error("Could not load NFL games");
+}
+
+const nflGames = await response.json();
+
+games = nflGames.map((game, index) => {
+const outcomes =
+game.bookmakers?.[0]?.markets?.[0]?.outcomes || [];
+
+const spread = outcomes
+.map(o => `${o.name} ${o.point > 0 ? "+" : ""}${o.point}`)
+.join(" / ");
+
+return {
+id: index + 1,
+team1: game.away_team,
+team2: game.home_team,
+spread: spread
+};
+});
+
+displayGames();
+
+} catch (error) {
+console.error("Load games error:", error);
+alert("Could not load NFL games.");
+}
 }
 
 const nflGames = await response.json();
