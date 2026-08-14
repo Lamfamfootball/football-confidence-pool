@@ -559,28 +559,71 @@ return true;
 async function submitPicks() {
 
 const message =
-document.getElementById(
-"submitMessage"
-);
-
-message.innerText = "";
-
-if (!validatePicks()) {
-
-return;
-
-}
+document.getElementById("submitMessage");
 
 const playerName =
-prompt(
-"Enter your name:"
-);
+prompt("Enter your name:");
 
 if (!playerName) {
+return;
+}
+
+const cleanName =
+playerName.trim();
+
+if (!cleanName) {
+return;
+}
+
+
+// ==================================================
+// CHECK FOR EXISTING SUBMISSION
+// ==================================================
+
+const { data: existingPicks, error: checkError } =
+await supabaseClient
+.from("Picks")
+.select("game_id")
+.eq("player-name", cleanName)
+.eq("week", currentWeek);
+
+if (checkError) {
+
+console.error(checkError);
+
+message.className =
+"error";
+
+message.innerText =
+"Error checking previous picks: " +
+checkError.message;
 
 return;
 
 }
+
+
+if (
+existingPicks &&
+existingPicks.length > 0
+) {
+
+message.className =
+"error";
+
+message.innerText =
+"🔒 Picks already submitted for Week " +
+currentWeek +
+". Your picks are locked.";
+
+return;
+
+}
+
+
+// ==================================================
+// GET CURRENT PICKS
+// ==================================================
 
 const picks =
 document.querySelectorAll(
@@ -594,6 +637,7 @@ document.querySelectorAll(
 
 const rows = [];
 
+
 picks.forEach(
 (pick, index) => {
 
@@ -602,7 +646,7 @@ if (pick.value !== "") {
 rows.push({
 
 "player-name":
-playerName.trim(),
+cleanName,
 
 game_id:
 Number(
@@ -637,6 +681,7 @@ await supabaseClient
 .from("Picks")
 .insert(rows);
 
+
 if (error) {
 
 console.error(error);
@@ -652,16 +697,50 @@ return;
 
 }
 
+
+// ==================================================
+// SUCCESS
+// ==================================================
+
 message.className =
 "success";
 
 message.innerText =
 "Week " +
 currentWeek +
-" picks submitted successfully!";
+" picks submitted successfully! 🔒";
+
+
+// Lock the form visually
+
+document
+.querySelectorAll(
+".pick-team, .confidence"
+)
+.forEach(select => {
+
+select.disabled = true;
+
+});
+
+
+// Lock submit button
+
+const submitButton =
+document.querySelector(
+'button[onclick="submitPicks()"]'
+);
+
+if (submitButton) {
+
+submitButton.disabled = true;
+
+submitButton.innerText =
+"Picks Locked 🔒";
 
 }
 
+}
 
 // ==================================================
 // START
