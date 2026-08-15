@@ -322,20 +322,29 @@ resultsContainer.innerHTML = "";
 message.innerText =
 "Loading games...";
 
-const { data, error } =
-await supabaseClient
-.from("games")
-.select("id,team1,team2,spread,Winner")
-.eq("week", week)
-.order("id");
+const response = await fetch(
+"https://bgkcnsnydchfghyhwurw.supabase.co/functions/v1/get-nfl-games"
+);
 
-if (error) {
+if (!response.ok) {
+throw new Error("Could not load NFL games");
+}
 
-message.innerText =
-"Error: " + error.message;
+const nflGames = await response.json();
 
+const data = nflGames.map((game, index) => ({
+id: index + 1,
+team1: game.away_team,
+team2: game.home_team,
+spread:
+game.bookmakers?.[0]?.markets?.[0]?.outcomes
+?.map(o => `${o.name} ${o.point > 0 ? "+" : ""}${o.point}`)
+.join(" / ") || ""
+}));
+
+if (!data || data.length === 0) {
+message.innerText = "No NFL games found.";
 return;
-
 }
 
 if (!data || data.length === 0) {
