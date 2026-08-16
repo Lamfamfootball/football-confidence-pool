@@ -370,7 +370,8 @@ await supabaseClient
 if (error) {
 
 document.getElementById("message").innerText =
-"Error: " + error.message;
+"Error deleting old Week " + week + " games: " +
+  error.message;
 
 return;
 
