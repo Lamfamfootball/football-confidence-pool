@@ -211,7 +211,88 @@ placeholder="Example: Chiefs -3.5"
 // ==================================================
 // SAVE WEEK
 // ==================================================
+async function loadWeekGames() {
 
+const week =
+parseInt(
+document.getElementById("week").value
+);
+
+const message =
+document.getElementById("message");
+
+message.innerText =
+"Loading Week " + week + " games...";
+
+try {
+
+const response = await fetch(
+"https://bgkcnsnydchfghyhwurw.supabase.co/functions/v1/get-nfl-games?week=" + week
+);
+
+if (!response.ok) {
+
+throw new Error(
+"NFL function returned " +
+response.status
+);
+
+}
+
+const nflGames =
+await response.json();
+
+if (
+!nflGames ||
+nflGames.length === 0
+) {
+
+message.innerText =
+"No games found for Week " +
+week + ".";
+
+return;
+
+}
+
+nflGames.forEach(
+(game, index) => {
+
+if (index >= 18) return;
+
+document.getElementById(
+`team1-${index + 1}`
+).value =
+game.away_team || "";
+
+document.getElementById(
+`team2-${index + 1}`
+).value =
+game.home_team || "";
+
+document.getElementById(
+`spread-${index + 1}`
+).value =
+game.spread || "";
+
+});
+
+message.innerText =
+"Week " +
+week +
+" games loaded. Review spreads, then Save Week.";
+
+} catch (error) {
+
+console.error(error);
+
+message.innerText =
+"Error loading games: " +
+error.message;
+
+}
+
+}
 async function saveWeek() {
 
 const week =
