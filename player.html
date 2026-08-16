@@ -579,8 +579,23 @@ async function submitPicks() {
 const message =
 document.getElementById("submitMessage");
 
+if (!validatePicks()) {
+return;
+}
+
 const playerName =
-prompt("Enter your name:");
+document.getElementById("playerName").value.trim();
+
+if (!playerName) {
+
+message.className = "error";
+
+message.innerText =
+"Please enter your name.";
+
+return;
+
+}
 
 if (!playerName) {
 return;
