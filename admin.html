@@ -280,21 +280,9 @@ document.getElementById(
 game.home_team || "";
 
 const spread =
-game.bookmakers
-?.[0]
-?.markets
-?.find(
-market =>
-market.key === "spreads"
-)
-?.outcomes
-?.map(
-outcome =>
-`${outcome.name} ${
-outcome.point > 0
-? "+"
-: ""
-}${outcome.point}`
+game.bookmakers?.[0]?.markets?.[0]?.outcomes
+?.map(o =>
+`${o.name} ${o.point > 0 ? "+" : ""}${o.point}`
 )
 .join(" / ") || "";
 
