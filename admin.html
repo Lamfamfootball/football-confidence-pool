@@ -474,8 +474,27 @@ message.innerText = "";
 data.forEach(game => {
 resultsContainer.innerHTML += `
 <div class="game">
+
 <h3>${game.team1} vs ${game.team2}</h3>
+
 <p>${game.spread}</p>
+
+<label>Winner</label>
+
+<select id="winner-${game.id}">
+
+<option value="">Select Winner</option>
+
+<option value="${game.team1}">
+${game.team1}
+</option>
+
+<option value="${game.team2}">
+${game.team2}
+</option>
+
+</select>
+
 </div>
 `;
 });
