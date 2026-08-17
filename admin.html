@@ -524,7 +524,6 @@ message.innerText =
 
 async function saveResults() {
 
-
 const message =
 document.getElementById("resultsMessage");
 
@@ -542,8 +541,6 @@ await supabaseClient
 .select("id,team1,team2,Winner")
 .eq("week", week)
 .order("id");
-  
-
 
 if (loadError) {
 
@@ -568,11 +565,13 @@ return;
 
 let savedCount = 0;
 
-for (const game of games) {
+for (let i = 0; i < games.length; i++) {
+
+const game = games[i];
 
 const select =
 document.getElementById(
-`winner-${game.id}`
+`winner-${i + 1}`
 );
 
 if (!select) {
@@ -627,7 +626,6 @@ savedCount +
 " game(s) updated.";
 
 }
-
 </script>
 
 </body>
