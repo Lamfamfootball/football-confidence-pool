@@ -537,6 +537,9 @@ document.querySelectorAll(
 "#results select[data-game-id]"
 );
 
+message.innerText =
+"Found " + selects.length + " winner boxes.";
+
 if (selects.length === 0) {
 
 message.innerText =
