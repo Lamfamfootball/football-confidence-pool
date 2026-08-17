@@ -420,8 +420,6 @@ document.getElementById("message").innerText =
 
 async function loadResults() {
 
-try {
-
 const week =
 parseInt(
 document.getElementById("resultsWeek").value
@@ -438,6 +436,8 @@ resultsContainer.innerHTML = "";
 message.innerText =
 "Loading games...";
 
+try {
+
 const { data: games, error } =
 await supabaseClient
 .from("games")
@@ -446,73 +446,65 @@ await supabaseClient
 .order("id");
 
 if (error) {
-
-throw new Error(
-error.code +
-" — " +
-error.message
-);
-
+throw error;
 }
 
 if (!games || games.length === 0) {
 
 message.innerText =
-"No games found for Week " +
-week + ".";
+"No games found for Week " + week + ".";
 
 return;
-
 }
 
 games.forEach(game => {
 
-resultsContainer.innerHTML += `
+const gameDiv =
+document.createElement("div");
 
-<div class="game">
+gameDiv.className = "game";
 
-<h3>
-${game.team1} vs ${game.team2}
-</h3>
+gameDiv.innerHTML = `
+<h3>${game.team1} vs ${game.team2}</h3>
 
-<p>
-${game.spread || ""}
-</p>
+<p>${game.spread || ""}</p>
 
 <label>Winner</label>
 
-<select id="winner-${game.id}">
+<select data-game-id="${game.id}">
 
 <option value="">
 Select Winner
 </option>
 
-<option
-value="${game.team1}"
-${game.Winner === game.team1 ? "selected" : ""}
->
+<option value="${game.team1}">
 ${game.team1}
 </option>
 
-<option
-value="${game.team2}"
-${game.Winner === game.team2 ? "selected" : ""}
->
+<option value="${game.team2}">
 ${game.team2}
 </option>
 
 </select>
-
-</div>
-
 `;
+
+const select =
+gameDiv.querySelector("select");
+
+if (game.Winner === game.team1) {
+select.value = game.team1;
+}
+
+if (game.Winner === game.team2) {
+select.value = game.team2;
+}
+
+resultsContainer.appendChild(gameDiv);
 
 });
 
 message.innerText =
-"Week " +
-week +
-" games loaded.";
+"Week " + week + " games loaded.";
 
 } catch (error) {
 
@@ -521,16 +513,11 @@ console.error(
 error
 );
 
-document.getElementById(
-"resultsMessage"
-).innerText =
+message.innerText =
 "Error loading games: " +
 error.message;
-
 }
-
 }
-
 
 
 // ==================================================
@@ -538,8 +525,6 @@ error.message;
 // ==================================================
 
 async function saveResults() {
-  
-
 
 const message =
 document.getElementById("resultsMessage");
@@ -547,57 +532,24 @@ document.getElementById("resultsMessage");
 message.innerText =
 "Saving results...";
 
-const week =
-parseInt(
-document.getElementById("resultsWeek").value
+const selects =
+document.querySelectorAll(
+"#results select[data-game-id]"
 );
 
-const { data: games, error: loadError } =
-await supabaseClient
-.from("games")
-.select("id,team1,team2,Winner")
-.eq("week", week)
-.order("id");
-
-if (loadError) {
+if (selects.length === 0) {
 
 message.innerText =
-"SAVE ERROR: " +
-loadError.code +
-" — " +
-loadError.message;
+"Please load the games first.";
 
 return;
-
-}
-
-if (!games || games.length === 0) {
-
-message.innerText =
-"No games found.";
-
-return;
-
 }
 
 let savedCount = 0;
 
-const selects =
-document.querySelectorAll(
-"#results select"
-);
+try {
 
-for (let i = 0; i < selects.length; i++) {
-
-const select =
-selects[i];
-
-const game =
-games[i];
-
-if (!game) {
-continue;
-}
+for (const select of selects) {
 
 const winner =
 select.value;
@@ -606,28 +558,22 @@ if (!winner) {
 continue;
 }
 
+const gameId =
+select.dataset.gameId;
+
 const { error } =
 await supabaseClient
 .from("games")
 .update({
 Winner: winner
 })
-.eq("id", game.id);
+.eq("id", gameId);
 
 if (error) {
-
-message.innerText =
-"SAVE ERROR: " +
-error.code +
-" — " +
-error.message;
-
-return;
-
+throw error;
 }
 
 savedCount++;
-
 }
 
 if (savedCount === 0) {
@@ -636,18 +582,24 @@ message.innerText =
 "Please select at least one winner.";
 
 return;
-
 }
 
 message.innerText =
-"Week " +
-week +
-" results saved successfully! " +
+"Results saved successfully! " +
 savedCount +
 " game(s) updated.";
 
-}
-</script>
+} catch (error) {
 
-</body>
-</html>
+console.error(
+"Save results error:",
+error
+);
+
+message.innerText =
+"SAVE ERROR: " +
+(error.code || "") +
+" — " +
+error.message;
+}
+}
