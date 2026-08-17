@@ -582,16 +582,20 @@ return;
 
 let savedCount = 0;
 
-for (let i = 0; i < games.length; i++) {
-
-const game = games[i];
-
-const select =
-document.getElementById(
-`winner-${game.id}`
+const selects =
+document.querySelectorAll(
+"#results select"
 );
 
-if (!select) {
+for (let i = 0; i < selects.length; i++) {
+
+const select =
+selects[i];
+
+const game =
+games[i];
+
+if (!game) {
 continue;
 }
 
