@@ -542,6 +542,7 @@ await supabaseClient
 .select("id,team1,team2,Winner")
 .eq("week", week)
 .order("id");
+alert("GAMES LOADED: + (games ? games.length : 0));
 
 if (loadError) {
 
