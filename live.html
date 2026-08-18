@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>LamFam 2026 Live Picks</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+body {
+margin: 0;
+font-family: Arial, sans-serif;
+background: #f3f4f6;
+color: #111827;
+}
+
+header {
+background: #111827;
+color: white;
+text-align: center;
+padding: 25px 15px;
+}
+
+header h1 {
+margin: 0;
+font-size: 28px;
+}
+
+main {
+max-width: 1200px;
+margin: 20px auto;
+padding: 15px;
+}
+
+.card {
+background: white;
+border-radius: 12px;
+padding: 20px;
+margin-bottom: 20px;
+box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+}
+
+.controls {
+display: flex;
+gap: 10px;
+align-items: center;
+flex-wrap: wrap;
+}
+
+select,
+button {
+padding: 10px 14px;
+border-radius: 7px;
+border: 1px solid #bbb;
+font-size: 16px;
+}
+
+button {
+background: #2563eb;
+color: white;
+border: none;
+cursor: pointer;
+}
+
+#status {
+font-weight: bold;
+}
+
+.table-wrapper {
+overflow-x: auto;
+}
+
+table {
+border-collapse: collapse;
+width: max-content;
+min-width: 100%;
+}
+
+th,
+td {
+border: 1px solid #d1d5db;
+padding: 10px;
+text-align: center;
+white-space: nowrap;
+}
+
+th {
+background: #111827;
+color: white;
+}
+
+.confidence {
+font-weight: bold;
+background: #e5e7eb;
+position: sticky;
+left: 0;
+z-index: 2;
+}
+
+.player-header {
+min-width: 120px;
+}
+
+.pick {
+min-width: 120px;
+font-weight: bold;
+}
+
+.pending {
+background: #f3f4f6;
+}
+
+.correct {
+background: #bbf7d0;
+color: #166534;
+}
+
+.incorrect {
+background: #fecaca;
+color: #991b1b;
+}
+
+.total {
+font-size: 18px;
+font-weight: bold;
+background: #dbeafe;
+}
+
+.leader {
+background: #fef3c7;
+}
+
+.small {
+font-size: 13px;
+color: #6b7280;
+}
+
+.games {
+margin-top: 10px;
+}
+
+.game-status {
+display: inline-block;
+margin: 4px;
+padding: 6px 10px;
+border-radius: 6px;
+background: #e5e7eb;
+}
+
+.completed {
+background: #bbf7d0;
+color: #166534;
+}
+
+.live {
+background: #fef3c7;
+color: #92400e;
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🏈 LamFam 2026 — Live Weekly Picks</h1>
+<p>Watch the pool standings change as games finish</p>
+</header>
+
+<main>
+
+<div class="card">
+
+<div class="controls">
+
+<label for="weekSelect">
+<strong>Week:</strong>
+</label>
+
+<select id="weekSelect">
+
+<option value="1">Week 1</option>
+<option value="2">Week 2</option>
+<option value="3">Week 3</option>
+<option value="4">Week 4</option>
+<option value="5">Week 5</option>
+<option value="6">Week 6</option>
+<option value="7">Week 7</option>
+<option value="8">Week 8</option>
+<option value="9">Week 9</option>
+<option value="10">Week 10</option>
+<option value="11">Week 11</option>
+<option value="12">Week 12</option>
+<option value="13">Week 13</option>
+<option value="14">Week 14</option>
+<option value="15">Week 15</option>
+<option value="16">Week 16</option>
+<option value="17">Week 17</option>
+<option value="18">Week 18</option>
+
+</select>
+
+<button onclick="loadLivePicks()">
+Refresh
+</button>
+
+</div>
+
+<p id="status">Loading...</p>
+
+<p class="small">
+The scoreboard automatically uses completed NFL game results.
+</p>
+
+</div>
+
+<div class="card">
+
+<h2>🏆 Current Standings</h2>
+
+<div id="standings"></div>
+
+</div>
+
+<div class="card">
+
+<h2>Player Picks</h2>
+
+<div class="table-wrapper">
+
+<div id="liveTable">
+Loading picks...
+</div>
+
+</div>
+
+</div>
+
+</main>
+
+<script>
+
+const SUPABASE_URL =
+"https://bgkcnsnydchfghyhwurw.supabase.co";
+
+const SUPABASE_KEY =
+"sb_publishable_CzYkbEOaBmQbXroYYOXDbA_6NX6kZLz";
+
+const supabaseClient =
+supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+
+
+// ==================================================
+// LOAD LIVE PICKS
+// ==================================================
+
+async function loadLivePicks() {
+
+const week =
+parseInt(
+document.getElementById("weekSelect").value
+);
+
+const status =
+document.getElementById("status");
+
+status.innerText =
+"Loading live results...";
+
+
+// ==================================================
+// GET GAMES FROM DATABASE
+// ==================================================
+
+const { data: games, error: gamesError } =
+await supabaseClient
+.from("games")
+.select("id,week,team1,team2,Spread")
+.eq("week", week);
+
+if (gamesError) {
+
+console.error(gamesError);
+
+status.innerText =
+"Error loading games.";
+
+return;
+
+}
+
+
+// ==================================================
+// GET PICKS
+// ==================================================
+
+const { data: picks, error: picksError } =
+await supabaseClient
+.from("Picks")
+.select(
+"player-name,game_id,team-picked,confidence,week"
+)
+.eq("week", week);
+
+if (picksError) {
+
+console.error(picksError);
+
+status.innerText =
+"Error loading picks.";
+
+return;
+
+}
+
+
+// ==================================================
+// GET NFL SCORES
+// ==================================================
+
+let scores = [];
+
+try {
+
+const response =
+await fetch(
+SUPABASE_URL +
+"/functions/v1/get-nfl-scores"
+);
+
+if (!response.ok) {
+throw new Error(
+"Score function failed"
+);
+}
+
+scores =
+await response.json();
+
+} catch (error) {
+
+console.error(error);
+
+status.innerText =
+"Unable to load NFL scores.";
+
+return;
+
+}
+
+
+// ==================================================
+// MATCH SCORES TO GAMES
+// ==================================================
+
+const results = {};
+
+games.forEach(game => {
+
+const matchingScore =
+scores.find(score => {
+
+const away =
+score.away_team;
+
+const home =
+score.home_team;
+
+return (
+(
+away === game.team1 &&
+home === game.team2
+) ||
+(
+away === game.team2 &&
+home === game.team1
+)
+);
+
+});
+
+if (!matchingScore) {
+
+results[game.id] = {
+completed: false,
+winner: null
+};
+
+return;
+
+}
+
+if (
+matchingScore.completed &&
+matchingScore.scores
+) {
+
+const awayScore =
+matchingScore.scores.find(
+s => s.name === matchingScore.away_team
+);
+
+const homeScore =
+matchingScore.scores.find(
+s => s.name === matchingScore.home_team
+);
+
+if (awayScore && homeScore) {
+
+const awayPoints =
+Number(awayScore.score);
+
+const homePoints =
+Number(homeScore.score);
+
+let winner = null;
+
+if (awayPoints > homePoints) {
+winner = matchingScore.away_team;
+}
+
+if (homePoints > awayPoints) {
+winner = matchingScore.home_team;
+}
+
+results[game.id] = {
+completed: true,
+winner: winner
+};
+
+return;
+
+}
+
+}
+
+results[game.id] = {
+completed: false,
+winner: null
+};
+
+});
+
+
+// ==================================================
+// BUILD PLAYER LIST
+// ==================================================
+
+const players = [];
+
+picks.forEach(pick => {
+
+const name =
+pick["player-name"];
+
+if (
+name &&
+!players.includes(name)
+) {
+
+players.push(name);
+
+}
+
+});
+
+
+// ==================================================
+// BUILD PLAYER DATA
+// ==================================================
+
+const playerData = {};
+
+players.forEach(player => {
+
+playerData[player] = {
+picks: {},
+points: 0,
+wins: 0
+};
+
+});
+
+picks.forEach(pick => {
+
+const player =
+pick["player-name"];
+
+const confidence =
+Number(pick.confidence);
+
+playerData[player].picks[confidence] = {
+team: pick["team-picked"],
+gameId: pick.game_id
+};
+
+const result =
+results[pick.game_id];
+
+if (
+result &&
+result.completed &&
+result.winner &&
+pick["team-picked"] === result.winner
+) {
+
+playerData[player].points +=
+confidence;
+
+playerData[player].wins++;
+
+}
+
+});
+
+
+// ==================================================
+// SORT PLAYERS BY POINTS
+// ==================================================
+
+players.sort(
+(a,b) => {
+
+if (
+playerData[b].points !==
+playerData[a].points
+) {
+
+return (
+playerData[b].points -
+playerData[a].points
+);
+
+}
+
+return (
+playerData[b].wins -
+playerData[a].wins
+);
+
+});
+
+
+// ==================================================
+// CURRENT STANDINGS
+// ==================================================
+
+let standingsHtml = `
+
+<table>
+
+<thead>
+
+<tr>
+<th>Rank</th>
+<th>Player</th>
+<th>Wins</th>
+<th>Confidence Points</th>
+</tr>
+
+</thead>
+
+<tbody>
+`;
+
+players.forEach(
+(player,index) => {
+
+standingsHtml += `
+
+<tr>
+
+<td>${index + 1}</td>
+
+<td>
+<strong>${player}</strong>
+</td>
+
+<td>
+${playerData[player].wins}
+</td>
+
+<td class="total">
+${playerData[player].points}
+</td>
+
+</tr>
+`;
+
+});
+
+standingsHtml += `
+</tbody>
+</table>
+`;
+
+document.getElementById(
+"standings"
+).innerHTML =
+standingsHtml;
+
+
+// ==================================================
+// PLAYER COLUMN TABLE
+// ==================================================
+
+let html = `
+
+<table>
+
+<thead>
+
+<tr>
+
+<th class="confidence">
+Confidence
+</th>
+`;
+
+players.forEach(player => {
+
+html += `
+
+<th class="player-header">
+${player}
+</th>
+`;
+
+});
+
+html += `
+</tr>
+</thead>
+
+<tbody>
+`;
+
+
+// ==================================================
+// CONFIDENCE 10 DOWN TO 1
+// ==================================================
+
+for (
+let confidence = 10;
+confidence >= 1;
+confidence--
+) {
+
+html += `
+
+<tr>
+
+<td class="confidence">
+${confidence}
+</td>
+`;
+
+players.forEach(player => {
+
+const pick =
+playerData[player].picks[
+confidence
+];
+
+if (!pick) {
+
+html += `
+<td class="pending">
+—
+</td>
+`;
+
+return;
+
+}
+
+const result =
+results[pick.gameId];
+
+let className =
+"pending";
+
+if (
+result &&
+result.completed
+) {
+
+if (
+result.winner &&
+pick.team === result.winner
+) {
+
+className =
+"correct";
+
+} else {
+
+className =
+"incorrect";
+
+}
+
+}
+
+html += `
+
+<td class="pick ${className}">
+${pick.team}
+</td>
+`;
+
+});
+
+html += `
+</tr>
+`;
+
+}
+
+
+// ==================================================
+// TOTAL ROW
+// ==================================================
+
+html += `
+
+<tr>
+
+<td class="confidence">
+TOTAL
+</td>
+`;
+
+players.forEach(player => {
+
+html += `
+
+<td class="total">
+${playerData[player].points}
+</td>
+`;
+
+});
+
+html += `
+</tr>
+`;
+
+html += `
+</tbody>
+</table>
+`;
+
+document.getElementById(
+"liveTable"
+).innerHTML =
+html;
+
+status.innerText =
+"Last updated: " +
+new Date().toLocaleTimeString();
+
+}
+
+
+// ==================================================
+// INITIAL LOAD
+// ==================================================
+
+loadLivePicks();
+
+
+// ==================================================
+// AUTO REFRESH EVERY 60 SECONDS
+// ==================================================
+
+setInterval(
+loadLivePicks,
+60000
+);
+
+</script>
+
+</body>
+</html>
