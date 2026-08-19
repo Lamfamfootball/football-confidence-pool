@@ -137,26 +137,11 @@ font-size: 13px;
 color: #6b7280;
 }
 
-.games {
-margin-top: 10px;
-}
-
-.game-status {
-display: inline-block;
-margin: 4px;
-padding: 6px 10px;
-border-radius: 6px;
-background: #e5e7eb;
-}
-
-.completed {
-background: #bbf7d0;
+.season-win {
+font-size: 18px;
+font-weight: bold;
+background: #dcfce7;
 color: #166534;
-}
-
-.live {
-background: #fef3c7;
-color: #92400e;
 }
 
 </style>
@@ -211,18 +196,41 @@ Refresh
 <p id="status">Loading...</p>
 
 <p class="small">
-The scoreboard automatically uses completed NFL game results.
+Weekly confidence points reset each week. Season wins accumulate throughout the season.
 </p>
 
 </div>
 
+
+<!-- ==================================================
+CURRENT WEEK STANDINGS
+================================================== -->
+
 <div class="card">
 
-<h2>🏆 Current Standings</h2>
+<h2>🏆 Current Week Standings</h2>
 
-<div id="standings"></div>
+<div id="weeklyStandings"></div>
 
 </div>
+
+
+<!-- ==================================================
+SEASON STANDINGS
+================================================== -->
+
+<div class="card">
+
+<h2>🏆 Season Standings</h2>
+
+<div id="seasonStandings"></div>
+
+</div>
+
+
+<!-- ==================================================
+PLAYER PICKS
+================================================== -->
 
 <div class="card">
 
@@ -239,6 +247,7 @@ Loading picks...
 </div>
 
 </main>
+
 
 <script>
 
@@ -261,7 +270,7 @@ SUPABASE_KEY
 
 async function loadLivePicks() {
 
-const week =
+const selectedWeek =
 parseInt(
 document.getElementById("weekSelect").value
 );
@@ -274,14 +283,13 @@ status.innerText =
 
 
 // ==================================================
-// GET GAMES FROM DATABASE
+// GET ALL GAMES
 // ==================================================
 
 const { data: games, error: gamesError } =
 await supabaseClient
 .from("games")
-.select("id,week,team1,team2,spread")
-.eq("week", week);
+.select("id,week,team1,team2,spread");
 
 if (gamesError) {
 
@@ -296,16 +304,15 @@ return;
 
 
 // ==================================================
-// GET PICKS
+// GET ALL PICKS
 // ==================================================
 
-const { data: picks, error: picksError } =
+const { data: allPicks, error: picksError } =
 await supabaseClient
 .from("Picks")
 .select(
 "player-name,game_id,team-picked,confidence,week"
-)
-.eq("week", week);
+);
 
 if (picksError) {
 
@@ -334,9 +341,16 @@ SUPABASE_URL +
 );
 
 if (!response.ok) {
+
+console.error(
+"Score function HTTP status:",
+response.status
+);
+
 throw new Error(
 "Score function failed"
 );
+
 }
 
 scores =
@@ -384,6 +398,7 @@ home === game.team1
 
 });
 
+
 if (!matchingScore) {
 
 results[game.id] = {
@@ -394,6 +409,7 @@ winner: null
 return;
 
 }
+
 
 if (
 matchingScore.completed &&
@@ -410,6 +426,7 @@ matchingScore.scores.find(
 s => s.name === matchingScore.home_team
 );
 
+
 if (awayScore && homeScore) {
 
 const awayPoints =
@@ -421,16 +438,25 @@ Number(homeScore.score);
 let winner = null;
 
 if (awayPoints > homePoints) {
-winner = matchingScore.away_team;
+
+winner =
+matchingScore.away_team;
+
 }
 
 if (homePoints > awayPoints) {
-winner = matchingScore.home_team;
+
+winner =
+matchingScore.home_team;
+
 }
 
 results[game.id] = {
+
 completed: true,
+
 winner: winner
+
 };
 
 return;
@@ -439,9 +465,13 @@ return;
 
 }
 
+
 results[game.id] = {
+
 completed: false,
+
 winner: null
+
 };
 
 });
@@ -453,7 +483,7 @@ winner: null
 
 const players = [];
 
-picks.forEach(pick => {
+allPicks.forEach(pick => {
 
 const name =
 pick["player-name"];
@@ -471,22 +501,30 @@ players.push(name);
 
 
 // ==================================================
-// BUILD PLAYER DATA
+// BUILD WEEKLY DATA
 // ==================================================
 
-const playerData = {};
+const weeklyData = {};
 
 players.forEach(player => {
 
-playerData[player] = {
+weeklyData[player] = {
+
 picks: {},
-points: 0,
-wins: 0
+
+points: 0
+
 };
 
 });
 
-picks.forEach(pick => {
+
+allPicks
+.filter(
+pick =>
+Number(pick.week) === selectedWeek
+)
+.forEach(pick => {
 
 const player =
 pick["player-name"];
@@ -494,13 +532,20 @@ pick["player-name"];
 const confidence =
 Number(pick.confidence);
 
-playerData[player].picks[confidence] = {
-team: pick["team-picked"],
-gameId: pick.game_id
+weeklyData[player].picks[confidence] = {
+
+team:
+pick["team-picked"],
+
+gameId:
+pick.game_id
+
 };
+
 
 const result =
 results[pick.game_id];
+
 
 if (
 result &&
@@ -509,58 +554,82 @@ result.winner &&
 pick["team-picked"] === result.winner
 ) {
 
-playerData[player].points +=
+weeklyData[player].points +=
 confidence;
 
-playerData[player].wins++;
-
 }
 
 });
 
 
 // ==================================================
-// SORT PLAYERS BY POINTS
+// BUILD SEASON DATA
 // ==================================================
 
-players.sort(
-(a,b) => {
+const seasonData = {};
+
+players.forEach(player => {
+
+seasonData[player] = {
+
+wins: 0
+
+};
+
+});
+
+
+allPicks.forEach(pick => {
+
+const player =
+pick["player-name"];
+
+const result =
+results[pick.game_id];
+
 
 if (
-playerData[b].points !==
-playerData[a].points
+result &&
+result.completed &&
+result.winner &&
+pick["team-picked"] === result.winner
 ) {
 
-return (
-playerData[b].points -
-playerData[a].points
-);
+seasonData[player].wins++;
 
 }
-
-return (
-playerData[b].wins -
-playerData[a].wins
-);
 
 });
 
 
 // ==================================================
-// CURRENT STANDINGS
+// WEEKLY STANDINGS
 // ==================================================
 
-let standingsHtml = `
+const weeklyPlayers =
+[...players].sort(
+(a,b) => {
+
+return (
+weeklyData[b].points -
+weeklyData[a].points
+);
+
+});
+
+
+let weeklyHtml = `
 
 <table>
 
 <thead>
 
 <tr>
+
 <th>Rank</th>
 <th>Player</th>
-<th>Wins</th>
 <th>Confidence Points</th>
+
 </tr>
 
 </thead>
@@ -568,25 +637,26 @@ let standingsHtml = `
 <tbody>
 `;
 
-players.forEach(
+
+weeklyPlayers.forEach(
 (player,index) => {
 
-standingsHtml += `
+weeklyHtml += `
 
 <tr>
 
-<td>${index + 1}</td>
-
 <td>
-<strong>${player}</strong>
+${index + 1}
 </td>
 
 <td>
-${playerData[player].wins}
+<strong>
+${player}
+</strong>
 </td>
 
 <td class="total">
-${playerData[player].points}
+${weeklyData[player].points}
 </td>
 
 </tr>
@@ -594,15 +664,131 @@ ${playerData[player].points}
 
 });
 
-standingsHtml += `
+
+weeklyHtml += `
+
 </tbody>
 </table>
 `;
 
+
 document.getElementById(
-"standings"
+"weeklyStandings"
 ).innerHTML =
-standingsHtml;
+weeklyHtml;
+
+
+// ==================================================
+// SEASON STANDINGS
+// ==================================================
+
+const seasonPlayers =
+[...players].sort(
+(a,b) => {
+
+return (
+seasonData[b].wins -
+seasonData[a].wins
+);
+
+});
+
+
+let seasonHtml = `
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Rank</th>
+<th>Player</th>
+<th>Total Wins</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+`;
+
+
+seasonPlayers.forEach(
+(player,index) => {
+
+seasonHtml += `
+
+<tr>
+
+<td>
+${index + 1}
+</td>
+
+<td>
+<strong>
+${player}
+</strong>
+</td>
+
+<td class="season-win">
+${seasonData[player].wins}
+</td>
+
+</tr>
+`;
+
+});
+
+
+seasonHtml += `
+
+</tbody>
+</table>
+`;
+
+
+document.getElementById(
+"seasonStandings"
+).innerHTML =
+seasonHtml;
+
+
+// ==================================================
+// BUILD SELECTED WEEK PLAYER DATA
+// ==================================================
+
+const playerData = {};
+
+players.forEach(player => {
+
+playerData[player] = {
+
+picks:
+weeklyData[player].picks,
+
+points:
+weeklyData[player].points
+
+};
+
+});
+
+
+// ==================================================
+// SORT PLAYERS FOR PLAYER PICKS TABLE
+// ==================================================
+
+const displayPlayers =
+[...players].sort(
+(a,b) => {
+
+return (
+weeklyData[b].points -
+weeklyData[a].points
+);
+
+});
 
 
 // ==================================================
@@ -622,7 +808,8 @@ Confidence
 </th>
 `;
 
-players.forEach(player => {
+
+displayPlayers.forEach(player => {
 
 html += `
 
@@ -633,8 +820,11 @@ ${player}
 
 });
 
+
 html += `
+
 </tr>
+
 </thead>
 
 <tbody>
@@ -660,16 +850,19 @@ ${confidence}
 </td>
 `;
 
-players.forEach(player => {
+
+displayPlayers.forEach(player => {
 
 const pick =
 playerData[player].picks[
 confidence
 ];
 
+
 if (!pick) {
 
 html += `
+
 <td class="pending">
 —
 </td>
@@ -679,11 +872,14 @@ return;
 
 }
 
+
 const result =
 results[pick.gameId];
 
+
 let className =
 "pending";
+
 
 if (
 result &&
@@ -707,6 +903,7 @@ className =
 
 }
 
+
 html += `
 
 <td class="pick ${className}">
@@ -716,7 +913,9 @@ ${pick.team}
 
 });
 
+
 html += `
+
 </tr>
 `;
 
@@ -736,7 +935,8 @@ TOTAL
 </td>
 `;
 
-players.forEach(player => {
+
+displayPlayers.forEach(player => {
 
 html += `
 
@@ -747,19 +947,25 @@ ${playerData[player].points}
 
 });
 
+
 html += `
+
 </tr>
 `;
 
+
 html += `
+
 </tbody>
 </table>
 `;
+
 
 document.getElementById(
 "liveTable"
 ).innerHTML =
 html;
+
 
 status.innerText =
 "Last updated: " +
