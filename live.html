@@ -280,7 +280,7 @@ status.innerText =
 const { data: games, error: gamesError } =
 await supabaseClient
 .from("games")
-.select("id,week,team1,team2,Spread")
+.select("id,week,team1,team2,spread")
 .eq("week", week);
 
 if (gamesError) {
