@@ -607,6 +607,10 @@ playerName.trim();
 if (!cleanName) {
 return;
 }
+localStorage.setItem(
+"lamfamPlayerName",
+cleanName
+);
 
 
 // ==================================================
@@ -780,6 +784,23 @@ submitButton.innerText =
 // ==================================================
 
 loadGames();
+
+
+// ==================================================
+// REMEMBER PLAYER NAME
+// ==================================================
+
+const savedPlayerName =
+localStorage.getItem("lamfamPlayerName");
+
+if (savedPlayerName) {
+
+document.getElementById(
+"playerName"
+).value =
+savedPlayerName;
+
+}
 
 </script>
 
