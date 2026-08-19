@@ -67,6 +67,11 @@ background: #16a34a;
 color: white;
 }
 
+.live {
+background: #7c3aed;
+color: white;
+}
+
 .leaderboard {
 background: #2563eb;
 color: white;
@@ -76,6 +81,18 @@ color: white;
 background: #f9fafb;
 color: #111827;
 border: 1px solid #ddd;
+}
+
+.info {
+text-align: left;
+line-height: 1.6;
+}
+
+.highlight {
+background: #f9fafb;
+border-radius: 8px;
+padding: 15px;
+margin-top: 20px;
 }
 
 footer {
@@ -90,8 +107,13 @@ padding: 20px;
 <body>
 
 <header>
+
 <h1>🏈 LamFam 2026 Football Pool</h1>
-<p>Make your picks. Compete for the championship.</p>
+
+<p>
+Make your picks. Follow the games. Compete for the championship.
+</p>
+
 </header>
 
 <main>
@@ -101,36 +123,75 @@ padding: 20px;
 <h2>Welcome!</h2>
 
 <p>
-Pick your 10 games against the spread
-and assign confidence points from 10 down to 1.
+Each week, pick 10 NFL games and rank your confidence
+from <strong>10 down to 1</strong>.
 </p>
 
 <a class="button pick" href="player.html">
 🏈 MAKE YOUR PICKS
 </a>
 
-<a class="button leaderboard" href="leaderboard.html">
-🏆 VIEW LEADERBOARD
+<a class="button live" href="live.html">
+📊 LIVE STANDINGS
 </a>
+
+<a class="button leaderboard" href="leaderboard.html">
+🏆 SEASON LEADERBOARD
+</a>
+
+<a class="button rules" href="README.md">
+📋 HOW TO PLAY / RULES
+</a>
+
+</div>
+
+<div class="card info">
+
+<h2>How It Works</h2>
+
+<p>
+<strong>1. Pick 10 games each week.</strong><br>
+Choose the team you think will win each selected game.
+</p>
+
+<p>
+<strong>2. Use confidence points 10 through 1.</strong><br>
+Use each number exactly once. Your 10-point pick is your strongest
+pick, while your 1-point pick is your least confident.
+</p>
+
+<p>
+<strong>3. Weekly points reset every week.</strong><br>
+Your confidence points determine your ranking for that week's pool.
+</p>
+
+<p>
+<strong>4. Season wins accumulate.</strong><br>
+Every correct pick adds to your total season wins.
+</p>
+
+<div class="highlight">
+
+<strong>🟩 Green</strong> = Your pick won<br>
+<strong>🟥 Red</strong> = Your pick lost<br>
+<strong>⬜ Gray</strong> = Game hasn't finished
+
+</div>
 
 </div>
 
 <div class="card">
 
-<h2>How It Works</h2>
+<h2>📱 Watch the Pool Live</h2>
 
 <p>
-Pick 10 games each week.
+The Live Standings page automatically updates as NFL games finish.
+Come back during the games and watch the weekly points and season
+standings change.
 </p>
 
 <p>
-Use each confidence value from
-<strong>10 through 1</strong> exactly once.
-</p>
-
-<p>
-The more confident you are in a pick,
-the more points that pick is worth.
+<strong>Tip:</strong> Bookmark the Live Standings page on your phone.
 </p>
 
 </div>
@@ -138,7 +199,9 @@ the more points that pick is worth.
 </main>
 
 <footer>
+
 LamFam 2026 Football Pool
+
 </footer>
 
 </body>
