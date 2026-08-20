@@ -128,15 +128,6 @@ font-weight: bold;
 background: #dbeafe;
 }
 
-.leader {
-background: #fef3c7;
-}
-
-.small {
-font-size: 13px;
-color: #6b7280;
-}
-
 .season-win {
 font-size: 18px;
 font-weight: bold;
@@ -144,6 +135,16 @@ background: #dcfce7;
 color: #166534;
 }
 
+.small {
+font-size: 13px;
+color: #6b7280;
+}
+
+.spread-info {
+font-size: 12px;
+color: #374151;
+margin-top: 3px;
+}
 </style>
 </head>
 
@@ -202,9 +203,7 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 </div>
 
 
-<!-- ==================================================
-CURRENT WEEK STANDINGS
-================================================== -->
+<!-- CURRENT WEEK -->
 
 <div class="card">
 
@@ -215,9 +214,7 @@ CURRENT WEEK STANDINGS
 </div>
 
 
-<!-- ==================================================
-SEASON STANDINGS
-================================================== -->
+<!-- SEASON -->
 
 <div class="card">
 
@@ -228,9 +225,7 @@ SEASON STANDINGS
 </div>
 
 
-<!-- ==================================================
-PLAYER PICKS
-================================================== -->
+<!-- PICKS -->
 
 <div class="card">
 
@@ -265,6 +260,131 @@ SUPABASE_KEY
 
 
 // ==================================================
+// PARSE SPREAD
+// ==================================================
+
+function parseSpreadForTeam(
+spreadText,
+team
+) {
+
+if (!spreadText) {
+return null;
+}
+
+const parts =
+spreadText.split("/");
+
+for (const part of parts) {
+
+const text =
+part.trim();
+
+const match =
+text.match(
+/^(.*?)\s+([+-]?\d+(?:\.\d+)?)$/
+);
+
+if (!match) {
+continue;
+}
+
+const teamName =
+match[1].trim();
+
+const spread =
+Number(match[2]);
+
+if (
+teamName === team
+) {
+
+return spread;
+
+}
+
+}
+
+return null;
+
+}
+
+
+// ==================================================
+// DETERMINE IF PICK WON AGAINST SPREAD
+// ==================================================
+
+function pickCovered(
+game,
+pickedTeam
+) {
+
+const homeScore =
+Number(game.home_score);
+
+const awayScore =
+Number(game.away_score);
+
+if (
+Number.isNaN(homeScore) ||
+Number.isNaN(awayScore)
+) {
+
+return false;
+
+}
+
+const homeTeam =
+game.home_team;
+
+const awayTeam =
+homeTeam === game.team1
+? game.team2
+: game.team1;
+
+const pickedScore =
+pickedTeam === homeTeam
+? homeScore
+: awayScore;
+
+const opponentScore =
+pickedTeam === homeTeam
+? awayScore
+: homeScore;
+
+const spread =
+parseSpreadForTeam(
+game.spread,
+pickedTeam
+);
+
+if (
+spread === null
+) {
+
+return false;
+
+}
+
+
+// --------------------------------------------------
+// APPLY SPREAD
+// --------------------------------------------------
+
+const adjustedScore =
+pickedScore + spread;
+
+
+// --------------------------------------------------
+// PUSH COUNTS AS A WIN
+// --------------------------------------------------
+
+return adjustedScore >= opponentScore;
+
+}
+
+
+// ==================================================
 // LOAD LIVE PICKS
 // ==================================================
 
@@ -272,28 +392,43 @@ async function loadLivePicks() {
 
 const selectedWeek =
 parseInt(
-document.getElementById("weekSelect").value
+document.getElementById(
+"weekSelect"
+).value
 );
 
 const status =
-document.getElementById("status");
+document.getElementById(
+"status"
+);
 
 status.innerText =
 "Loading live results...";
 
 
 // ==================================================
-// GET ALL GAMES
+// GET GAMES
 // ==================================================
 
-const { data: games, error: gamesError } =
+const {
+data: games,
+error: gamesError
+} =
 await supabaseClient
 .from("games")
-.select("id,week,team1,team2,spread");
+.select(
+"id,week,team1,team2,home_team,spread,home_score,away_score"
+)
+.eq(
+"week",
+selectedWeek
+);
 
 if (gamesError) {
 
-console.error(gamesError);
+console.error(
+gamesError
+);
 
 status.innerText =
 "Error loading games.";
@@ -304,10 +439,13 @@ return;
 
 
 // ==================================================
-// GET ALL PICKS
+// GET PICKS
 // ==================================================
 
-const { data: allPicks, error: picksError } =
+const {
+data: allPicks,
+error: picksError
+} =
 await supabaseClient
 .from("Picks")
 .select(
@@ -316,7 +454,9 @@ await supabaseClient
 
 if (picksError) {
 
-console.error(picksError);
+console.error(
+picksError
+);
 
 status.innerText =
 "Error loading picks.";
@@ -327,17 +467,19 @@ return;
 
 
 // ==================================================
-// GET NFL SCORES
+// UPDATE SCORES FROM NFLDATA
 // ==================================================
-
-let scores = [];
 
 try {
 
 const response =
 await fetch(
 SUPABASE_URL +
-"/functions/v1/get-nfl-scores"
+"/functions/v1/get-nfl-scores?week=" +
+selectedWeek,
+{
+method: "POST"
+}
 );
 
 if (!response.ok) {
@@ -353,15 +495,54 @@ throw new Error(
 
 }
 
-scores =
+const scoreResult =
 await response.json();
+
+console.log(
+"Score update:",
+scoreResult
+);
 
 } catch (error) {
 
-console.error(error);
+console.error(
+"Score update error:",
+error
+);
+
+// Do NOT stop the page.
+// It can still display whatever
+// scores are already stored.
+
+}
+
+
+// ==================================================
+// RELOAD GAMES AFTER SCORE UPDATE
+// ==================================================
+
+const {
+data: updatedGames,
+error: updatedGamesError
+} =
+await supabaseClient
+.from("games")
+.select(
+"id,week,team1,team2,home_team,spread,home_score,away_score"
+)
+.eq(
+"week",
+selectedWeek
+);
+
+if (updatedGamesError) {
+
+console.error(
+updatedGamesError
+);
 
 status.innerText =
-"Unable to load NFL scores.";
+"Error loading updated games.";
 
 return;
 
@@ -369,108 +550,27 @@ return;
 
 
 // ==================================================
-// MATCH SCORES TO GAMES
+// BUILD RESULTS
 // ==================================================
 
 const results = {};
 
-games.forEach(game => {
+updatedGames.forEach(
+game => {
 
-const matchingScore =
-scores.find(score => {
-
-const away =
-score.away_team;
-
-const home =
-score.home_team;
-
-return (
-(
-away === game.team1 &&
-home === game.team2
-) ||
-(
-away === game.team2 &&
-home === game.team1
-)
-);
-
-});
-
-
-if (!matchingScore) {
-
-results[game.id] = {
-completed: false,
-winner: null
-};
-
-return;
-
-}
-
-
-if (
-matchingScore.completed &&
-matchingScore.scores
-) {
-
-const awayScore =
-matchingScore.scores.find(
-s => s.name === matchingScore.away_team
-);
-
-const homeScore =
-matchingScore.scores.find(
-s => s.name === matchingScore.home_team
-);
-
-
-if (awayScore && homeScore) {
-
-const awayPoints =
-Number(awayScore.score);
-
-const homePoints =
-Number(homeScore.score);
-
-let winner = null;
-
-if (awayPoints > homePoints) {
-
-winner =
-matchingScore.away_team;
-
-}
-
-if (homePoints > awayPoints) {
-
-winner =
-matchingScore.home_team;
-
-}
+const hasScores =
+game.home_score !== null &&
+game.home_score !== undefined &&
+game.away_score !== null &&
+game.away_score !== undefined;
 
 results[game.id] = {
 
-completed: true,
+completed:
+hasScores,
 
-winner: winner
-
-};
-
-return;
-
-}
-
-}
-
-
-results[game.id] = {
-
-completed: false,
-
-winner: null
+game:
+game
 
 };
 
@@ -483,7 +583,8 @@ winner: null
 
 const players = [];
 
-allPicks.forEach(pick => {
+allPicks.forEach(
+pick => {
 
 const name =
 pick["player-name"];
@@ -506,7 +607,8 @@ players.push(name);
 
 const weeklyData = {};
 
-players.forEach(player => {
+players.forEach(
+player => {
 
 weeklyData[player] = {
 
@@ -522,9 +624,11 @@ points: 0
 allPicks
 .filter(
 pick =>
-Number(pick.week) === selectedWeek
+Number(pick.week) ===
+selectedWeek
 )
-.forEach(pick => {
+.forEach(
+pick => {
 
 const player =
 pick["player-name"];
@@ -532,7 +636,9 @@ pick["player-name"];
 const confidence =
 Number(pick.confidence);
 
-weeklyData[player].picks[confidence] = {
+weeklyData[player].picks[
+confidence
+] = {
 
 team:
 pick["team-picked"],
@@ -546,16 +652,22 @@ pick.game_id
 const result =
 results[pick.game_id];
 
-
 if (
 result &&
-result.completed &&
-result.winner &&
-pick["team-picked"] === result.winner
+result.completed
+) {
+
+if (
+pickCovered(
+result.game,
+pick["team-picked"]
+)
 ) {
 
 weeklyData[player].points +=
 confidence;
+
+}
 
 }
 
@@ -568,7 +680,8 @@ confidence;
 
 const seasonData = {};
 
-players.forEach(player => {
+players.forEach(
+player => {
 
 seasonData[player] = {
 
@@ -579,7 +692,8 @@ wins: 0
 });
 
 
-allPicks.forEach(pick => {
+allPicks.forEach(
+pick => {
 
 const player =
 pick["player-name"];
@@ -587,15 +701,21 @@ pick["player-name"];
 const result =
 results[pick.game_id];
 
-
 if (
 result &&
-result.completed &&
-result.winner &&
-pick["team-picked"] === result.winner
+result.completed
+) {
+
+if (
+pickCovered(
+result.game,
+pick["team-picked"]
+)
 ) {
 
 seasonData[player].wins++;
+
+}
 
 }
 
@@ -670,7 +790,6 @@ weeklyHtml += `
 </tbody>
 </table>
 `;
-
 
 document.getElementById(
 "weeklyStandings"
@@ -747,7 +866,6 @@ seasonHtml += `
 </table>
 `;
 
-
 document.getElementById(
 "seasonStandings"
 ).innerHTML =
@@ -755,12 +873,13 @@ seasonHtml;
 
 
 // ==================================================
-// BUILD SELECTED WEEK PLAYER DATA
+// BUILD PLAYER DATA
 // ==================================================
 
 const playerData = {};
 
-players.forEach(player => {
+players.forEach(
+player => {
 
 playerData[player] = {
 
@@ -776,7 +895,7 @@ weeklyData[player].points
 
 
 // ==================================================
-// SORT PLAYERS FOR PLAYER PICKS TABLE
+// SORT PLAYERS
 // ==================================================
 
 const displayPlayers =
@@ -792,7 +911,7 @@ weeklyData[a].points
 
 
 // ==================================================
-// PLAYER COLUMN TABLE
+// BUILD PLAYER TABLE
 // ==================================================
 
 let html = `
@@ -808,8 +927,8 @@ Confidence
 </th>
 `;
 
-
-displayPlayers.forEach(player => {
+displayPlayers.forEach(
+player => {
 
 html += `
 
@@ -819,7 +938,6 @@ ${player}
 `;
 
 });
-
 
 html += `
 
@@ -850,14 +968,13 @@ ${confidence}
 </td>
 `;
 
-
-displayPlayers.forEach(player => {
+displayPlayers.forEach(
+player => {
 
 const pick =
 playerData[player].picks[
 confidence
 ];
-
 
 if (!pick) {
 
@@ -872,14 +989,11 @@ return;
 
 }
 
-
 const result =
 results[pick.gameId];
 
-
 let className =
 "pending";
-
 
 if (
 result &&
@@ -887,8 +1001,10 @@ result.completed
 ) {
 
 if (
-result.winner &&
-pick.team === result.winner
+pickCovered(
+result.game,
+pick.team
+)
 ) {
 
 className =
@@ -903,16 +1019,28 @@ className =
 
 }
 
-
 html += `
 
 <td class="pick ${className}">
+
 ${pick.team}
+
+${
+result &&
+result.game &&
+result.game.spread
+?
+`<div class="spread-info">
+${result.game.spread}
+</div>`
+:
+""
+}
+
 </td>
 `;
 
 });
-
 
 html += `
 
@@ -923,7 +1051,7 @@ html += `
 
 
 // ==================================================
-// TOTAL ROW
+// TOTAL
 // ==================================================
 
 html += `
@@ -935,8 +1063,8 @@ TOTAL
 </td>
 `;
 
-
-displayPlayers.forEach(player => {
+displayPlayers.forEach(
+player => {
 
 html += `
 
@@ -947,19 +1075,16 @@ ${playerData[player].points}
 
 });
 
-
 html += `
 
 </tr>
 `;
-
 
 html += `
 
 </tbody>
 </table>
 `;
-
 
 document.getElementById(
 "liveTable"
