@@ -99,10 +99,6 @@ background: #aebdca;
 cursor: not-allowed;
 }
 
-#status {
-font-weight: bold;
-}
-
 .success {
 color: #357a4b;
 font-weight: bold;
@@ -130,7 +126,8 @@ margin-bottom: 20px;
 border: 1px solid #d6e4ef;
 }
 
-.load-button {
+.load-button,
+.verify-button {
 background: #527fa5;
 }
 
@@ -178,10 +175,6 @@ margin-bottom: 20px;
 border: 1px solid #d6e4ef;
 }
 
-.verify-button {
-background: #527fa5;
-}
-
 #playerStatus {
 margin-top: 10px;
 font-weight: bold;
@@ -207,7 +200,9 @@ font-weight: bold;
 <h2>Choose Your Week</h2>
 
 
-<!-- PLAYER LOGIN -->
+<!-- ==================================================
+PLAYER VERIFICATION
+================================================== -->
 
 <div class="player-box">
 
@@ -249,7 +244,9 @@ Enter your name and PIN.
 </div>
 
 
-<!-- WEEK SELECTOR -->
+<!-- ==================================================
+WEEK SELECTOR
+================================================== -->
 
 <div class="week-selector">
 
@@ -291,8 +288,6 @@ Load Week
 </div>
 
 
-<!-- WEEK -->
-
 <h2 id="weekTitle">
 Week 1
 </h2>
@@ -303,7 +298,9 @@ confidence points <strong>1–10</strong>.
 </p>
 
 
-<!-- SUMMARY -->
+<!-- ==================================================
+SUMMARY
+================================================== -->
 
 <div class="summary">
 
@@ -318,7 +315,9 @@ confidence points <strong>1–10</strong>.
 </div>
 
 
-<!-- DEADLINE -->
+<!-- ==================================================
+DEADLINE
+================================================== -->
 
 <p
 id="deadlineMessage"
@@ -328,19 +327,21 @@ class="deadline-open"
 </p>
 
 
-<!-- STATUS -->
-
 <p id="status">
 Please verify your player first.
 </p>
 
 
-<!-- GAMES -->
+<!-- ==================================================
+GAME LIST
+================================================== -->
 
 <div id="gameList"></div>
 
 
-<!-- SUBMIT -->
+<!-- ==================================================
+SUBMIT
+================================================== -->
 
 <button
 type="button"
@@ -378,7 +379,7 @@ SUPABASE_KEY
 
 
 // ==================================================
-// PLAYER IDENTITY
+// CURRENT PLAYER
 // ==================================================
 
 let currentPlayerId = null;
@@ -529,7 +530,7 @@ playerStatus.innerText =
 
 
 // ==================================================
-// GET PLAYER BY NAME
+// SECURE SUPABASE PLAYER VERIFICATION
 // ==================================================
 
 const {
@@ -537,13 +538,12 @@ data,
 error
 } =
 await supabaseClient
-.from("players")
-.select(
-"id,name,pin"
-)
-.ilike(
-"name",
-name
+.rpc(
+"verify_player",
+{
+input_name: name,
+input_pin: pin
+}
 );
 
 
@@ -564,43 +564,21 @@ return;
 
 
 // ==================================================
-// FIND EXACT MATCH
+// NO MATCH
 // ==================================================
 
-const player =
-(data || []).find(
-p =>
+if (
+!data ||
+data.length === 0
+) {
 
-p.name
-.trim()
-.toLowerCase()
-===
+currentPlayerId = null;
 
-name
-.toLowerCase()
-
-&&
-
-String(p.pin)
-.trim()
-===
-
-pin
-);
-
-
-if (!player) {
-
-currentPlayerId =
-null;
-
-currentPlayerName =
-null;
+currentPlayerName = null;
 
 document.getElementById(
 "submitButton"
-).disabled =
-true;
+).disabled = true;
 
 playerStatus.className =
 "error";
@@ -617,6 +595,9 @@ return;
 // PLAYER VERIFIED
 // ==================================================
 
+const player =
+data[0];
+
 currentPlayerId =
 player.id;
 
@@ -632,14 +613,13 @@ playerStatus.innerText =
 player.name;
 
 
-// Enable submit
 document.getElementById(
 "submitButton"
 ).disabled =
 false;
 
 
-// Load current week
+// Load selected week
 loadSelectedWeek();
 
 }
@@ -920,7 +900,7 @@ updateSummary
 
 
 // ==================================================
-// LOCK STARTED GAMES
+// LOCK GAMES THAT HAVE STARTED
 // ==================================================
 
 data.forEach(
@@ -951,7 +931,6 @@ gameCard.querySelector(
 ".pick-team"
 );
 
-
 const confidenceSelect =
 gameCard.querySelector(
 ".confidence"
@@ -974,14 +953,11 @@ document.createElement(
 "div"
 );
 
-
 startedMessage.className =
 "started";
 
-
 startedMessage.innerText =
 "🔒 Game has started — picks are closed for this game.";
-
 
 gameCard.appendChild(
 startedMessage
@@ -1047,7 +1023,6 @@ document.getElementById(
 "selectedCount"
 ).innerText =
 selectedCount;
-
 
 document.getElementById(
 "pointsUsed"
@@ -1222,7 +1197,7 @@ return;
 
 
 // ==================================================
-// CHECK EXISTING PICKS BY PLAYER ID
+// CHECK EXISTING SUBMISSION
 // ==================================================
 
 const {
@@ -1293,7 +1268,6 @@ const confidence =
 document.querySelectorAll(
 ".confidence"
 );
-
 
 const rows = [];
 
@@ -1403,10 +1377,8 @@ document.getElementById(
 "submitButton"
 );
 
-
 submitButton.disabled =
 true;
-
 
 submitButton.innerText =
 "Picks Locked 🔒";
