@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<title>Lamfam Admin-Set Games and Results</title>
+<title>LamFam Admin — Set Games and Results</title>
 
 <style>
 body {
@@ -95,19 +95,13 @@ font-weight: bold;
 color: #1d4ed8;
 font-weight: bold;
 }
-
-.spread-info {
-color: #7c3aed;
-font-weight: bold;
-}
-
 </style>
 </head>
 
 <body>
 
 <header>
-<h1>🏈 Lamfam Admin</h1>
+<h1>🏈 LamFam Admin</h1>
 <p>Set up weekly football games and enter results</p>
 </header>
 
@@ -201,6 +195,11 @@ SUPABASE_URL,
 SUPABASE_KEY
 );
 
+
+// ==================================================
+// STORE AUTOMATICALLY LOADED GAME INFORMATION
+// ==================================================
+
 let loadedGames = [];
 
 
@@ -249,29 +248,12 @@ class="info time"
 Game Time: —
 </div>
 
-<div
-id="spread-info-${i}"
-class="info spread-info"
->
-Spread: —
-</div>
-
-<label>Team 1 Spread</label>
+<label>Point Spread</label>
 
 <input
-type="number"
-step="0.5"
-id="spread1-${i}"
-placeholder="Team 1 spread"
->
-
-<label>Team 2 Spread</label>
-
-<input
-type="number"
-step="0.5"
-id="spread2-${i}"
-placeholder="Team 2 spread"
+type="text"
+id="spread-${i}"
+placeholder="Spread"
 >
 
 </div>
@@ -339,13 +321,12 @@ return;
 
 }
 
+
+// Store automatic game information
 loadedGames = nflGames;
 
 
-// ==================================================
-// FILL ADMIN PAGE
-// ==================================================
-
+// Fill Admin page
 nflGames.forEach(
 (game, index) => {
 
@@ -357,7 +338,9 @@ const number =
 index + 1;
 
 
+// ------------------------------------------
 // TEAMS
+// ------------------------------------------
 
 document.getElementById(
 `team1-${number}`
@@ -370,7 +353,9 @@ document.getElementById(
 game.home_team || "";
 
 
+// ------------------------------------------
 // HOME TEAM
+// ------------------------------------------
 
 document.getElementById(
 `home-${number}`
@@ -379,7 +364,9 @@ document.getElementById(
 (game.home_team || "Not entered");
 
 
+// ------------------------------------------
 // GAME TIME
+// ------------------------------------------
 
 if (game.commence_time) {
 
@@ -403,78 +390,36 @@ minute: "2-digit"
 }
 );
 
-}
-
-
-// ==================================================
-// FIND SPREADS
-// ==================================================
-
-let team1Spread = "";
-let team2Spread = "";
-
-const bookmaker =
-game.bookmakers?.[0];
-
-const market =
-bookmaker?.markets?.find(
-m => m.key === "spreads"
-);
-
-if (market?.outcomes) {
-
-const team1Outcome =
-market.outcomes.find(
-o =>
-o.name === game.away_team
-);
-
-const team2Outcome =
-market.outcomes.find(
-o =>
-o.name === game.home_team
-);
-
-if (team1Outcome) {
-
-team1Spread =
-team1Outcome.point;
-
-}
-
-if (team2Outcome) {
-
-team2Spread =
-team2Outcome.point;
-
-}
-
-}
-
-
-// DISPLAY SPREAD
+} else {
 
 document.getElementById(
-`spread1-${number}`
-).value =
-team1Spread;
-
-document.getElementById(
-`spread2-${number}`
-).value =
-team2Spread;
-
-document.getElementById(
-`spread-info-${number}`
+`time-${number}`
 ).innerText =
-"Spread: " +
-(game.away_team || "") +
-" " +
-(team1Spread !== "" ? team1Spread : "—") +
-"  |  " +
-(game.home_team || "") +
-" " +
-(team2Spread !== "" ? team2Spread : "—");
+"Game Time: Not entered";
+
+}
+
+
+// ------------------------------------------
+// SPREAD
+// ------------------------------------------
+
+const spread =
+game.bookmakers?.[0]
+?.markets?.[0]
+?.outcomes
+?.map(
+o =>
+`${o.name} ${
+o.point > 0 ? "+" : ""
+}${o.point}`
+)
+.join(" / ") || "";
+
+document.getElementById(
+`spread-${number}`
+).value =
+spread;
 
 }
 );
@@ -501,6 +446,12 @@ error.message;
 // ==================================================
 // SAVE WEEK
 // ==================================================
+// IMPORTANT:
+// This version DOES NOT delete the old games.
+// It updates existing games when the same matchup
+// already exists, preserving the game ID.
+// This keeps player Picks linked to their games.
+// ==================================================
 
 async function saveWeek() {
 
@@ -509,99 +460,19 @@ parseInt(
 document.getElementById("week").value
 );
 
-const games = [];
+const message =
+document.getElementById("message");
 
-for (
-let i = 1;
-i <= 18;
-i++
-) {
-
-const team1 =
-document
-.getElementById(
-`team1-${i}`
-)
-.value
-.trim();
-
-const team2 =
-document
-.getElementById(
-`team2-${i}`
-)
-.value
-.trim();
-
-const spread1Value =
-document
-.getElementById(
-`spread1-${i}`
-)
-.value;
-
-const spread2Value =
-document
-.getElementById(
-`spread2-${i}`
-)
-.value;
-
-const originalGame =
-loadedGames[i - 1];
-
-if (
-team1 &&
-team2
-) {
-
-games.push({
-
-week: week,
-
-team1: team1,
-
-team2: team2,
-
-home_team:
-originalGame?.home_team ||
-team2,
-
-spread:
-`${team1} ${spread1Value} / ${team2} ${spread2Value}`,
-
-spread_team1:
-spread1Value !== ""
-?
-Number(spread1Value)
-:
-null,
-
-spread_team2:
-spread2Value !== ""
-?
-Number(spread2Value)
-:
-null,
-
-game_time:
-originalGame?.commence_time ||
-null
-
-});
-
-}
-
-}
+message.innerText =
+"Saving Week " + week + "...";
 
 
 if (
-games.length === 0
+!loadedGames ||
+loadedGames.length === 0
 ) {
 
-document.getElementById(
-"message"
-).innerText =
+message.innerText =
 "Please load the NFL games first.";
 
 return;
@@ -609,68 +480,214 @@ return;
 }
 
 
-// DELETE OLD WEEK
+try {
 
+// Get current games for this week
 const {
-error
+data: existingGames,
+error: existingError
 } =
 await supabaseClient
 .from("games")
-.delete()
+.select(
+"id,week,team1,team2,home_team,spread,game_time"
+)
 .eq(
 "week",
 week
 );
 
-if (error) {
+if (existingError) {
 
-document.getElementById(
-"message"
-).innerText =
-"Error deleting old Week " +
-week +
-" games: " +
-error.message;
-
-return;
+throw existingError;
 
 }
 
 
-// INSERT NEW WEEK
+// ==================================================
+// SAVE EACH LOADED NFL GAME
+// ==================================================
+
+let savedCount = 0;
+
+for (
+let i = 0;
+i < loadedGames.length && i < 18;
+i++
+) {
+
+const nflGame =
+loadedGames[i];
+
+const team1 =
+nflGame.away_team ||
+"";
+
+const team2 =
+nflGame.home_team ||
+"";
+
+const homeTeam =
+nflGame.home_team ||
+team2;
+
+const gameTime =
+nflGame.commence_time ||
+null;
+
+
+// ------------------------------------------
+// GET SPREAD
+// ------------------------------------------
+
+const spread =
+nflGame.bookmakers?.[0]
+?.markets?.[0]
+?.outcomes
+?.map(
+o =>
+`${o.name} ${
+o.point > 0 ? "+" : ""
+}${o.point}`
+)
+.join(" / ") || "";
+
+
+// ------------------------------------------
+// FIND EXISTING GAME
+// ------------------------------------------
+// Match by teams, regardless of order.
+// ------------------------------------------
+
+const existingGame =
+(existingGames || []).find(
+game =>
+(
+game.team1 === team1 &&
+game.team2 === team2
+)
+||
+(
+game.team1 === team2 &&
+game.team2 === team1
+)
+);
+
+
+// ------------------------------------------
+// UPDATE EXISTING GAME
+// ------------------------------------------
+
+if (existingGame) {
+
+const {
+error: updateError
+} =
+await supabaseClient
+.from("games")
+.update({
+
+team1:
+team1,
+
+team2:
+team2,
+
+home_team:
+homeTeam,
+
+spread:
+spread,
+
+game_time:
+gameTime
+
+})
+.eq(
+"id",
+existingGame.id
+);
+
+if (updateError) {
+
+throw updateError;
+
+}
+
+savedCount++;
+
+
+// ------------------------------------------
+// INSERT NEW GAME
+// ------------------------------------------
+
+} else {
 
 const {
 error: insertError
 } =
 await supabaseClient
 .from("games")
-.insert(
-games
-);
+.insert({
+
+week:
+week,
+
+team1:
+team1,
+
+team2:
+team2,
+
+home_team:
+homeTeam,
+
+spread:
+spread,
+
+game_time:
+gameTime
+
+});
 
 if (insertError) {
 
-document.getElementById(
-"message"
-).innerText =
-"Error saving Week " +
-week +
-": " +
-insertError.message;
+throw insertError;
 
-return;
+}
+
+savedCount++;
+
+}
 
 }
 
 
-document.getElementById(
-"message"
-).innerText =
+// ==================================================
+// FINISHED
+// ==================================================
+
+message.innerText =
 "✅ Week " +
 week +
 " saved successfully! " +
-games.length +
-" games saved with spreads.";
+savedCount +
+" games saved. Existing game IDs were preserved.";
+
+} catch (error) {
+
+console.error(
+"Save Week error:",
+error
+);
+
+message.innerText =
+"Error saving Week " +
+week +
+": " +
+error.message;
+
+}
 
 }
 
@@ -713,7 +730,7 @@ error
 await supabaseClient
 .from("games")
 .select(
-"id, team1, team2, home_team, spread, spread_team1, spread_team2, game_time, Winner, home_score, away_score"
+"id,team1,team2,home_team,spread,game_time,Winner,home_score,away_score"
 )
 .eq(
 "week",
@@ -755,6 +772,7 @@ document.createElement(
 gameDiv.className =
 "game";
 
+
 const gameTime =
 game.game_time
 ?
@@ -794,18 +812,16 @@ ${gameTime}
 
 <p>
 <strong>Spread:</strong>
-${game.team1} ${game.spread_team1 ?? "—"}
-/
-${game.team2} ${game.spread_team2 ?? "—"}
+${game.spread || "Not entered"}
 </p>
 
 <p>
-<strong>Final Score:</strong>
+<strong>Score:</strong>
 ${
 game.away_score !== null &&
 game.home_score !== null
 ?
-`${game.team1} ${game.away_score} — ${game.team2} ${game.home_score}`
+`${game.team1}: ${game.away_score} — ${game.team2}: ${game.home_score}`
 :
 "Not final"
 }
@@ -953,7 +969,8 @@ await supabaseClient
 .from("games")
 .update({
 
-Winner: winner
+Winner:
+winner
 
 })
 .eq(
