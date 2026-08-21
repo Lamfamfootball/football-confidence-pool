@@ -59,7 +59,9 @@ font-weight: bold;
 margin-top: 8px;
 }
 
-select {
+select,
+input[type="text"],
+input[type="password"] {
 width: 100%;
 padding: 10px;
 margin-top: 6px;
@@ -74,18 +76,6 @@ background: #ffffff;
 label {
 display: block;
 margin-top: 10px;
-}
-
-input[type="text"] {
-width: 100%;
-padding: 10px;
-margin-top: 6px;
-margin-bottom: 15px;
-box-sizing: border-box;
-border: 1px solid #b9cfdf;
-border-radius: 6px;
-font-size: 16px;
-background: #ffffff;
 }
 
 button {
@@ -180,6 +170,23 @@ font-weight: bold;
 margin-top: 10px;
 }
 
+.player-box {
+background: #f3f8fc;
+padding: 15px;
+border-radius: 8px;
+margin-bottom: 20px;
+border: 1px solid #d6e4ef;
+}
+
+.verify-button {
+background: #527fa5;
+}
+
+#playerStatus {
+margin-top: 10px;
+font-weight: bold;
+}
+
 </style>
 </head>
 
@@ -199,6 +206,8 @@ margin-top: 10px;
 
 <h2>Choose Your Week</h2>
 
+<div class="player-box">
+
 <label>
 <strong>Player Name</strong>
 </label>
@@ -210,15 +219,32 @@ placeholder="Enter your name"
 autocomplete="name"
 >
 
-<p style="
-font-size:13px;
-color:#6b7280;
-margin-top:-8px;
-margin-bottom:15px;
-">
-<strong>Important:</strong> Enter your name exactly the same way every week.
-Your name is used to track your season wins and standings.
+<label>
+<strong>2-Digit PIN</strong>
+</label>
+
+<input
+type="password"
+id="playerPin"
+placeholder="Enter your 2-digit PIN"
+inputmode="numeric"
+maxlength="2"
+>
+
+<button
+type="button"
+class="verify-button"
+onclick="verifyPlayer()"
+>
+Verify Player
+</button>
+
+<p id="playerStatus">
+Enter your name and PIN.
 </p>
+
+</div>
+
 
 <div class="week-selector">
 
@@ -285,14 +311,16 @@ confidence points <strong>1–10</strong>.
 </p>
 
 <p id="status">
-Loading games...
+Please verify your player first.
 </p>
 
 <div id="gameList"></div>
 
 <button
 type="button"
+id="submitButton"
 onclick="submitPicks()"
+disabled
 >
 Submit Picks
 </button>
@@ -323,14 +351,16 @@ SUPABASE_KEY
 
 
 // ==================================================
-// CURRENT SELECTED WEEK
+// PLAYER IDENTITY
 // ==================================================
 
+let currentPlayerId = null;
+let currentPlayerName = null;
 let currentWeek = 1;
 
 
 // ==================================================
-// PICK DEADLINE
+// PICK DEADLINES
 // ==================================================
 
 function getPickDeadline(week) {
@@ -372,17 +402,13 @@ getPickDeadline(week);
 
 
 // ==================================================
-// UPDATE DEADLINE MESSAGE
+// DEADLINE MESSAGE
 // ==================================================
 
 function updateDeadlineMessage() {
 
 const deadlineMessage =
 document.getElementById("deadlineMessage");
-
-if (!deadlineMessage) {
-return;
-}
 
 if (picksAreClosed(currentWeek)) {
 
@@ -410,32 +436,162 @@ deadlineMessage.className =
 
 
 // ==================================================
+// VERIFY PLAYER
+// ==================================================
+
+async function verifyPlayer() {
+
+const playerStatus =
+document.getElementById("playerStatus");
+
+const name =
+document.getElementById("playerName")
+.value
+.trim();
+
+const pin =
+document.getElementById("playerPin")
+.value
+.trim();
+
+if (!name) {
+
+playerStatus.className = "error";
+playerStatus.innerText =
+"Please enter your name.";
+
+return;
+
+}
+
+if (!/^\d{2}$/.test(pin)) {
+
+playerStatus.className = "error";
+playerStatus.innerText =
+"Please enter your 2-digit PIN.";
+
+return;
+
+}
+
+playerStatus.className = "";
+playerStatus.innerText =
+"Verifying...";
+
+
+// Case-insensitive name matching
+const { data, error } =
+await supabaseClient
+.from("players")
+.select("id,name,pin")
+.ilike("name", name)
+.eq("pin", pin)
+.limit(1);
+
+if (error) {
+
+console.error(error);
+
+playerStatus.className = "error";
+playerStatus.innerText =
+"Error verifying player: " +
+error.message;
+
+return;
+
+}
+
+
+if (!data || data.length === 0) {
+
+currentPlayerId = null;
+currentPlayerName = null;
+
+document.getElementById(
+"submitButton"
+).disabled = true;
+
+playerStatus.className = "error";
+playerStatus.innerText =
+"❌ Name and PIN do not match.";
+
+return;
+
+}
+
+
+const player =
+data[0];
+
+currentPlayerId =
+player.id;
+
+currentPlayerName =
+player.name;
+
+playerStatus.className =
+"success";
+
+playerStatus.innerText =
+"✅ Verified: " +
+player.name;
+
+
+// Enable submit button
+document.getElementById(
+"submitButton"
+).disabled =
+false;
+
+
+// Load current week
+loadSelectedWeek();
+
+}
+
+
+// ==================================================
 // LOAD SELECTED WEEK
 // ==================================================
 
 function loadSelectedWeek() {
 
+if (!currentPlayerId) {
+
+document.getElementById(
+"status"
+).innerText =
+"Please verify your player first.";
+
+return;
+
+}
+
 const weekSelect =
 document.getElementById("weekSelect");
 
 currentWeek =
-parseInt(weekSelect.value);
+parseInt(
+weekSelect.value
+);
 
 document.getElementById(
 "weekTitle"
 ).innerText =
-"Week " + currentWeek;
+"Week " +
+currentWeek;
 
 document.getElementById(
 "gameList"
-).innerHTML = "";
+).innerHTML =
+"";
 
 document.getElementById(
 "submitMessage"
-).innerText = "";
+).innerText =
+"";
 
 updateSummary();
-
 updateDeadlineMessage();
 
 loadGames();
@@ -458,13 +614,19 @@ document.getElementById("gameList");
 status.innerText =
 "Loading games...";
 
-const { data, error } =
+const {
+data,
+error
+} =
 await supabaseClient
 .from("games")
 .select(
 "id,team1,team2,home_team,spread,game_time"
 )
-.eq("week", currentWeek)
+.eq(
+"week",
+currentWeek
+)
 .order("id");
 
 if (error) {
@@ -495,7 +657,7 @@ status.innerText = "";
 gameList.innerHTML = "";
 
 
-data.forEach((game, index) => {
+data.forEach((game) => {
 
 const div =
 document.createElement("div");
@@ -505,7 +667,8 @@ div.className =
 
 
 const homeTeam =
-game.home_team || game.team2;
+game.home_team ||
+game.team2;
 
 const awayTeam =
 game.team1 === homeTeam
@@ -544,17 +707,23 @@ ${game.spread || "N/A"}
 <strong>Game Time:</strong>
 ${
 game.game_time
-? new Date(game.game_time).toLocaleString()
-: "Not entered"
+?
+new Date(
+game.game_time
+).toLocaleString()
+:
+"Not entered"
 }
 </div>
 
 <label>
 Pick:
+
 <select
 class="pick-team"
 data-game-id="${game.id}"
 >
+
 <option value="">
 Choose a team
 </option>
@@ -568,14 +737,17 @@ ${awayTeam}
 </option>
 
 </select>
+
 </label>
 
 <label>
 Confidence:
+
 <select
 class="confidence"
 data-game-id="${game.id}"
 >
+
 <option value="">
 Points
 </option>
@@ -592,6 +764,7 @@ Points
 <option value="1">1</option>
 
 </select>
+
 </label>
 
 `;
@@ -602,7 +775,7 @@ gameList.appendChild(div);
 
 
 // ==================================================
-// ADD CHANGE LISTENERS
+// CHANGE LISTENERS
 // ==================================================
 
 document
@@ -620,7 +793,7 @@ updateSummary
 
 
 // ==================================================
-// LOCK GAMES THAT HAVE STARTED
+// LOCK STARTED GAMES
 // ==================================================
 
 data.forEach((game, index) => {
@@ -636,19 +809,28 @@ new Date(game.game_time);
 if (gameStarted) {
 
 const gameCard =
-document.querySelectorAll(".game")[index];
+document.querySelectorAll(
+".game"
+)[index];
 
 const pickSelect =
-gameCard.querySelector(".pick-team");
+gameCard.querySelector(
+".pick-team"
+);
 
 const confidenceSelect =
-gameCard.querySelector(".confidence");
+gameCard.querySelector(
+".confidence"
+);
 
-pickSelect.disabled = true;
+pickSelect.disabled =
+true;
 
-confidenceSelect.disabled = true;
+confidenceSelect.disabled =
+true;
 
-gameCard.style.opacity = "0.6";
+gameCard.style.opacity =
+"0.6";
 
 const startedMessage =
 document.createElement("div");
@@ -667,7 +849,6 @@ startedMessage
 
 });
 
-
 updateSummary();
 
 }
@@ -680,22 +861,29 @@ updateSummary();
 function updateSummary() {
 
 const picks =
-document.querySelectorAll(".pick-team");
+document.querySelectorAll(
+".pick-team"
+);
 
 const confidence =
-document.querySelectorAll(".confidence");
+document.querySelectorAll(
+".confidence"
+);
 
 let selectedCount = 0;
-
 let pointsAssigned = 0;
 
-picks.forEach((pick, index) => {
+picks.forEach(
+(pick, index) => {
 
 if (pick.value !== "") {
 
 selectedCount++;
 
-if (confidence[index].value !== "") {
+if (
+confidence[index] &&
+confidence[index].value !== ""
+) {
 
 pointsAssigned++;
 
@@ -725,25 +913,35 @@ pointsAssigned;
 function validatePicks() {
 
 const picks =
-document.querySelectorAll(".pick-team");
+document.querySelectorAll(
+".pick-team"
+);
 
 const confidence =
-document.querySelectorAll(".confidence");
+document.querySelectorAll(
+".confidence"
+);
 
 let selectedPicks = 0;
 
 const points = [];
 
-picks.forEach((pick, index) => {
+picks.forEach(
+(pick, index) => {
 
 if (pick.value !== "") {
 
 selectedPicks++;
 
-if (confidence[index].value !== "") {
+if (
+confidence[index] &&
+confidence[index].value !== ""
+) {
 
 points.push(
-Number(confidence[index].value)
+Number(
+confidence[index].value
+)
 );
 
 }
@@ -751,6 +949,7 @@ Number(confidence[index].value)
 }
 
 });
+
 
 if (selectedPicks !== 10) {
 
@@ -762,6 +961,7 @@ return false;
 
 }
 
+
 if (points.length !== 10) {
 
 alert(
@@ -772,12 +972,14 @@ return false;
 
 }
 
+
 points.sort(
-(a, b) => a - b
+(a,b) => a-b
 );
 
 const required =
 [1,2,3,4,5,6,7,8,9,10];
+
 
 for (
 let i = 0;
@@ -816,6 +1018,19 @@ document.getElementById(
 );
 
 
+if (!currentPlayerId) {
+
+message.className =
+"error";
+
+message.innerText =
+"Please verify your name and PIN first.";
+
+return;
+
+}
+
+
 if (picksAreClosed(currentWeek)) {
 
 message.className =
@@ -824,7 +1039,7 @@ message.className =
 message.innerText =
 "🔒 Picks for Week " +
 currentWeek +
-" are closed. The deadline was Saturday at 11:59 PM.";
+" are closed.";
 
 return;
 
@@ -836,31 +1051,8 @@ return;
 }
 
 
-const playerName =
-document.getElementById(
-"playerName"
-).value.trim();
-
-
-if (!playerName) {
-
-message.className =
-"error";
-
-message.innerText =
-"Please enter your name.";
-
-return;
-
-}
-
-
-const cleanName =
-playerName.trim();
-
-
 // ==================================================
-// CHECK FOR EXISTING SUBMISSION
+// CHECK EXISTING PICKS BY PLAYER ID
 // ==================================================
 
 const {
@@ -871,8 +1063,8 @@ await supabaseClient
 .from("Picks")
 .select("game_id")
 .eq(
-"player-name",
-cleanName
+"player_id",
+currentPlayerId
 )
 .eq(
 "week",
@@ -915,7 +1107,7 @@ return;
 
 
 // ==================================================
-// GET CURRENT PICKS
+// CREATE PICK ROWS
 // ==================================================
 
 const picks =
@@ -938,8 +1130,11 @@ if (pick.value !== "") {
 
 rows.push({
 
+player_id:
+currentPlayerId,
+
 "player-name":
-cleanName,
+currentPlayerName,
 
 game_id:
 Number(
@@ -969,7 +1164,9 @@ currentWeek
 // SAVE PICKS
 // ==================================================
 
-const { error } =
+const {
+error
+} =
 await supabaseClient
 .from("Picks")
 .insert(rows);
@@ -1014,28 +1211,22 @@ document
 )
 .forEach(select => {
 
-select.disabled = true;
+select.disabled =
+true;
 
 });
 
 
-// ==================================================
-// LOCK SUBMIT BUTTON
-// ==================================================
-
 const submitButton =
-document.querySelector(
-'button[onclick="submitPicks()"]'
+document.getElementById(
+"submitButton"
 );
 
-if (submitButton) {
-
-submitButton.disabled = true;
+submitButton.disabled =
+true;
 
 submitButton.innerText =
 "Picks Locked 🔒";
-
-}
 
 }
 
@@ -1043,8 +1234,6 @@ submitButton.innerText =
 // ==================================================
 // START
 // ==================================================
-
-loadGames();
 
 updateDeadlineMessage();
 
