@@ -7,18 +7,20 @@
 <title>LamFam Admin — Set Games and Results</title>
 
 <style>
+
 body {
 margin: 0;
 font-family: Arial, sans-serif;
-background: #f3f4f6;
-color: #111827;
+background: #eaf6ff;
+color: #123047;
 }
 
 header {
-background: #111827;
-color: white;
+background: #b9e3ff;
+color: #123047;
 text-align: center;
 padding: 25px 15px;
+border-bottom: 3px solid #8dccf5;
 }
 
 header h1 {
@@ -26,8 +28,12 @@ margin: 0;
 font-size: 28px;
 }
 
+header p {
+margin-bottom: 0;
+}
+
 main {
-max-width: 700px;
+max-width: 800px;
 margin: 25px auto;
 padding: 15px;
 }
@@ -37,7 +43,12 @@ background: white;
 border-radius: 12px;
 padding: 25px;
 margin-bottom: 20px;
-box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+box-shadow: 0 3px 12px rgba(50,100,130,0.12);
+border: 1px solid #c9e9fa;
+}
+
+h2 {
+color: #17618a;
 }
 
 input,
@@ -46,9 +57,18 @@ width: 100%;
 padding: 12px;
 margin: 6px 0 15px;
 box-sizing: border-box;
-border: 1px solid #ccc;
-border-radius: 6px;
+border: 1px solid #a9d6ed;
+border-radius: 7px;
 font-size: 16px;
+background: #f8fcff;
+color: #123047;
+}
+
+input:focus,
+select:focus {
+outline: none;
+border-color: #5bb7e8;
+box-shadow: 0 0 0 2px #d7f1ff;
 }
 
 button {
@@ -61,62 +81,97 @@ margin-top: 10px;
 }
 
 .save {
-background: #16a34a;
+background: #4aa9d8;
 color: white;
 width: 100%;
 }
 
+.save:hover {
+background: #318fbe;
+}
+
 .game {
-border: 1px solid #ddd;
-border-radius: 8px;
-padding: 15px;
+background: #f2faff;
+border: 1px solid #c5e7f7;
+border-radius: 10px;
+padding: 18px;
 margin: 15px 0;
 }
 
-h3 {
+.game h3 {
 margin-top: 0;
+color: #17618a;
+}
+
+.matchup {
+font-size: 18px;
+font-weight: bold;
+margin: 8px 0 15px;
+}
+
+.home-team {
+color: #17618a;
+}
+
+.home-icon {
+font-size: 18px;
+margin-right: 4px;
 }
 
 hr {
 margin: 30px 0;
 border: 0;
-border-top: 1px solid #ddd;
+border-top: 2px solid #c9e9fa;
 }
 
 .info {
-background: #f9fafb;
-border: 1px solid #e5e7eb;
+background: #e5f5ff;
+border: 1px solid #c1e5f5;
 padding: 10px;
-border-radius: 6px;
+border-radius: 7px;
 margin-bottom: 12px;
 }
 
 .home {
-color: #166534;
+color: #17618a;
 font-weight: bold;
 }
 
 .time {
-color: #1d4ed8;
+color: #246b94;
 font-weight: bold;
 }
+
+#message,
+#resultsMessage {
+font-weight: bold;
+color: #17618a;
+}
+
 </style>
 </head>
 
 <body>
 
 <header>
+
 <h1>🏈 LamFam Admin</h1>
-<p>Set up weekly football games and enter results</p>
+
+<p>
+Set up weekly football games and enter results
+</p>
+
 </header>
 
 <main>
 
 <div class="card">
 
-<h2>Week Setup</h2>
+<h2>📅 Week Setup</h2>
 
-<label>Week Number</label>
+<label>
+<strong>Week Number</strong>
+</label>
 
 <input
 type="number"
@@ -148,9 +203,11 @@ Save Week
 
 <hr>
 
-<h2>Game Results</h2>
+<h2>🏆 Game Results</h2>
 
-<label>Results Week</label>
+<label>
+<strong>Results Week</strong>
+</label>
 
 <input
 type="number"
@@ -202,14 +259,14 @@ SUPABASE_KEY
 
 
 // ==================================================
-// STORE CURRENT WEEK GAMES
+// CURRENTLY LOADED GAMES
 // ==================================================
 
 let loadedGames = [];
 
 
 // ==================================================
-// LOAD WEEK GAMES DIRECTLY FROM DATABASE
+// LOAD WEEK GAMES FROM DATABASE
 // ==================================================
 
 async function loadWeekGames() {
@@ -231,7 +288,6 @@ message.innerText =
 gamesContainer.innerHTML = "";
 
 loadedGames = [];
-
 
 try {
 
@@ -262,11 +318,11 @@ ascending: true
 }
 );
 
-
 if (error) {
-throw error;
-}
 
+throw error;
+
+}
 
 if (
 !games ||
@@ -282,7 +338,6 @@ return;
 
 }
 
-
 loadedGames =
 games;
 
@@ -297,7 +352,6 @@ games.forEach(
 const number =
 index + 1;
 
-
 const gameDiv =
 document.createElement(
 "div"
@@ -305,7 +359,6 @@ document.createElement(
 
 gameDiv.className =
 "game";
-
 
 const gameTime =
 game.game_time
@@ -332,22 +385,31 @@ gameDiv.innerHTML = `
 Game ${number}
 </h3>
 
-<p>
-<strong>${game.team1}</strong>
+<div class="matchup">
+
+${game.team1}
+
 @
-<strong>${game.team2}</strong>
-</p>
+
+<span class="home-team">
+<span class="home-icon">🏠</span>
+${game.team2}
+</span>
+
+</div>
 
 <div class="info home">
-Home: ${game.home_team || game.team2}
+🏠 Home:
+${game.home_team || game.team2}
 </div>
 
 <div class="info time">
-Game Time: ${gameTime}
+🕒 Game Time:
+${gameTime}
 </div>
 
 <label>
-Point Spread
+<strong>Point Spread</strong>
 </label>
 
 <input
@@ -369,9 +431,11 @@ gameDiv
 message.innerText =
 "Week " +
 week +
-" loaded. Review the spreads, then click Save Week.";
+" loaded. Review the games, then click Save Week.";
 
-} catch (error) {
+}
+
+catch (error) {
 
 console.error(
 "Load Week Games error:",
@@ -391,14 +455,9 @@ error.message;
 // SAVE WEEK
 // ==================================================
 //
-// IMPORTANT:
-// Only updates the spread.
-// Does NOT change:
-// - game ID
-// - teams
-// - winner
-// - scores
-// - picks
+// Only updates spreads.
+// Does NOT change game IDs,
+// teams, winners, or scores.
 //
 // ==================================================
 
@@ -417,7 +476,6 @@ message.innerText =
 week +
 "...";
 
-
 if (
 !loadedGames ||
 loadedGames.length === 0
@@ -430,11 +488,9 @@ return;
 
 }
 
-
 try {
 
 let savedCount = 0;
-
 
 for (
 const game
@@ -446,7 +502,6 @@ document.getElementById(
 "spread-" +
 game.id
 );
-
 
 const spread =
 spreadInput
@@ -472,16 +527,15 @@ spread
 game.id
 );
 
-
 if (error) {
-throw error;
-}
 
+throw error;
+
+}
 
 savedCount++;
 
 }
-
 
 message.innerText =
 "✅ Week " +
@@ -490,7 +544,9 @@ week +
 savedCount +
 " spreads updated.";
 
-} catch (error) {
+}
+
+catch (error) {
 
 console.error(
 "Save Week error:",
@@ -536,7 +592,6 @@ resultsContainer.innerHTML = "";
 message.innerText =
 "Loading games...";
 
-
 try {
 
 const {
@@ -566,11 +621,11 @@ ascending: true
 }
 );
 
-
 if (error) {
-throw error;
-}
 
+throw error;
+
+}
 
 if (
 !games ||
@@ -621,40 +676,63 @@ minute: "2-digit"
 gameDiv.innerHTML = `
 
 <h3>
+
 ${game.team1}
+
 @
+
+<span class="home-team">
+<span class="home-icon">🏠</span>
 ${game.team2}
+</span>
+
 </h3>
 
-<p>
-<strong>Home:</strong>
+<div class="info home">
+
+🏠 Home:
 ${game.home_team || game.team2}
-</p>
+
+</div>
 
 <p>
+
 <strong>Game Time:</strong>
 ${gameTime}
+
 </p>
 
 <p>
+
 <strong>Spread:</strong>
 ${game.spread || "Not entered"}
+
 </p>
 
 <p>
+
 <strong>Score:</strong>
+
 ${
 game.away_score !== null &&
 game.home_score !== null
+
 ?
-`${game.team1}: ${game.away_score} — ${game.team2}: ${game.home_score}`
+
+`${game.team1}: ${game.away_score}
+— 
+${game.team2}: ${game.home_score}`
+
 :
+
 "Not entered"
+
 }
+
 </p>
 
 <label>
-Winner
+<strong>Winner</strong>
 </label>
 
 <select
@@ -693,7 +771,6 @@ game.team1;
 
 }
 
-
 if (
 game.Winner === game.team2
 ) {
@@ -716,7 +793,9 @@ message.innerText =
 week +
 " games loaded.";
 
-} catch (error) {
+}
+
+catch (error) {
 
 console.error(
 "Load Results error:",
@@ -778,11 +857,11 @@ of selects
 const winner =
 select.value;
 
-
 if (!winner) {
-continue;
-}
 
+continue;
+
+}
 
 const gameId =
 select.dataset.gameId;
@@ -806,9 +885,10 @@ gameId
 
 
 if (error) {
-throw error;
-}
 
+throw error;
+
+}
 
 savedCount++;
 
@@ -832,7 +912,9 @@ message.innerText =
 savedCount +
 " game(s) updated.";
 
-} catch (error) {
+}
+
+catch (error) {
 
 console.error(
 "Save Results error:",
