@@ -155,6 +155,36 @@ text-align: center;
 font-weight: bold;
 }
 
+.score-row {
+display: flex;
+align-items: center;
+gap: 12px;
+margin: 10px 0;
+}
+
+.score-team {
+flex: 1;
+font-weight: bold;
+}
+
+.score-input {
+width: 90px;
+margin: 0;
+text-align: center;
+font-weight: bold;
+font-size: 18px;
+}
+
+.result-winner {
+background: #dcfce7;
+border: 1px solid #86efac;
+color: #166534;
+padding: 10px;
+border-radius: 7px;
+font-weight: bold;
+margin-top: 12px;
+}
+
 #message,
 #resultsMessage {
 font-weight: bold;
@@ -303,17 +333,14 @@ let team2Spread = "";
 parts.forEach(
 part => {
 
-part =
-part.trim();
+part = part.trim();
 
 if (
 part.startsWith(team1)
 ) {
 
 team1Spread =
-part
-.substring(team1.length)
-.trim();
+part.substring(team1.length).trim();
 
 }
 
@@ -322,22 +349,15 @@ part.startsWith(team2)
 ) {
 
 team2Spread =
-part
-.substring(team2.length)
-.trim();
+part.substring(team2.length).trim();
 
 }
 
 });
 
 return {
-
-team1:
-team1Spread,
-
-team2:
-team2Spread
-
+team1: team1Spread,
+team2: team2Spread
 };
 
 }
@@ -367,8 +387,7 @@ team1Spread &&
 ) {
 
 team1Spread =
-"+" +
-team1Spread;
+"+" + team1Spread;
 
 }
 
@@ -379,8 +398,7 @@ team2Spread &&
 ) {
 
 team2Spread =
-"+" +
-team2Spread;
+"+" + team2Spread;
 
 }
 
@@ -462,9 +480,7 @@ ascending: true
 );
 
 if (error) {
-
 throw error;
-
 }
 
 if (
@@ -484,11 +500,6 @@ return;
 loadedGames =
 games;
 
-
-// ==================================================
-// DISPLAY GAMES
-// ==================================================
-
 games.forEach(
 (game,index) => {
 
@@ -496,9 +507,7 @@ const number =
 index + 1;
 
 const gameDiv =
-document.createElement(
-"div"
-);
+document.createElement("div");
 
 gameDiv.className =
 "game";
@@ -521,14 +530,12 @@ minute: "2-digit"
 :
 "Not entered";
 
-
 const parsed =
 parseSpread(
 game.spread,
 game.team1,
 game.team2
 );
-
 
 gameDiv.innerHTML = `
 
@@ -599,7 +606,6 @@ gameDiv
 
 });
 
-
 message.innerText =
 "Week " +
 week +
@@ -659,43 +665,34 @@ try {
 let savedCount = 0;
 
 for (
-const game
-of loadedGames
+const game of loadedGames
 ) {
 
 const spread1Input =
 document.getElementById(
-"spread1-" +
-game.id
+"spread1-" + game.id
 );
 
 const spread2Input =
 document.getElementById(
-"spread2-" +
-game.id
+"spread2-" + game.id
 );
 
 const spread =
 formatSpread(
-
 game.team1,
-
 spread1Input
 ?
 spread1Input.value
 :
 "",
-
 game.team2,
-
 spread2Input
 ?
 spread2Input.value
 :
 ""
-
 );
-
 
 const {
 error
@@ -703,10 +700,7 @@ error
 await supabaseClient
 .from("games")
 .update({
-
-spread:
-spread
-
+spread: spread
 })
 .eq(
 "id",
@@ -714,9 +708,7 @@ game.id
 );
 
 if (error) {
-
 throw error;
-
 }
 
 savedCount++;
@@ -808,9 +800,7 @@ ascending: true
 );
 
 if (error) {
-
 throw error;
-
 }
 
 if (
@@ -827,18 +817,14 @@ return;
 
 }
 
-
 games.forEach(
 game => {
 
 const gameDiv =
-document.createElement(
-"div"
-);
+document.createElement("div");
 
 gameDiv.className =
 "game";
-
 
 const gameTime =
 game.game_time
@@ -858,6 +844,18 @@ minute: "2-digit"
 :
 "Not entered";
 
+let winnerText = "";
+
+if (game.Winner) {
+
+winnerText =
+`
+<div class="result-winner">
+🏆 Winner: ${game.Winner}
+</div>
+`;
+
+}
 
 gameDiv.innerHTML = `
 
@@ -868,11 +866,8 @@ ${game.team1}
 @
 
 <span class="home-team">
-
 <span class="home-icon">🏠</span>
-
 ${game.team2}
-
 </span>
 
 </h3>
@@ -898,77 +893,55 @@ ${game.spread || "Not entered"}
 
 </p>
 
-<p>
+<div class="score-row">
 
-<strong>Score:</strong>
+<div class="score-team">
+${game.team1}
+</div>
 
-${
-game.away_score !== null &&
-game.home_score !== null
-
+<input
+class="score-input"
+type="number"
+min="0"
+id="away-score-${game.id}"
+value="${
+game.away_score !== null
 ?
-
-`${game.team1}: ${game.away_score}
-—
-${game.team2}: ${game.home_score}`
-
+game.away_score
 :
-
-"Not entered"
-
-}
-
-</p>
-
-<label>
-<strong>Winner</strong>
-</label>
-
-<select
-data-game-id="${game.id}"
+""
+}"
+placeholder="0"
 >
 
-<option value="">
-Select Winner
-</option>
+</div>
 
-<option value="${game.team1}">
-${game.team1}
-</option>
+<div class="score-row">
 
-<option value="${game.team2}">
-${game.team2}
-</option>
+<div class="score-team">
+🏠 ${game.team2}
+</div>
 
-</select>
+<input
+class="score-input"
+type="number"
+min="0"
+id="home-score-${game.id}"
+value="${
+game.home_score !== null
+?
+game.home_score
+:
+""
+}"
+placeholder="0"
+>
+
+</div>
+
+${winnerText}
 
 `;
-
-
-const select =
-gameDiv.querySelector(
-"select"
-);
-
-
-if (
-game.Winner === game.team1
-) {
-
-select.value =
-game.team1;
-
-}
-
-if (
-game.Winner === game.team2
-) {
-
-select.value =
-game.team2;
-
-}
-
 
 resultsContainer.appendChild(
 gameDiv
@@ -976,11 +949,10 @@ gameDiv
 
 });
 
-
 message.innerText =
 "Week " +
 week +
-" games loaded.";
+" games loaded. Enter final scores, then click Save Results.";
 
 }
 
@@ -1003,6 +975,9 @@ error.message;
 // ==================================================
 // SAVE RESULTS
 // ==================================================
+//
+// Entering the scores automatically determines winner.
+// ==================================================
 
 async function saveResults() {
 
@@ -1014,15 +989,13 @@ document.getElementById(
 message.innerText =
 "Saving results...";
 
-
-const selects =
+const scoreInputs =
 document.querySelectorAll(
-"#results select[data-game-id]"
+"#results .score-input"
 );
 
-
 if (
-selects.length === 0
+scoreInputs.length === 0
 ) {
 
 message.innerText =
@@ -1032,29 +1005,152 @@ return;
 
 }
 
-
 let savedCount = 0;
 
+let skippedCount = 0;
 
 try {
 
+const gameIds =
+new Set();
+
+scoreInputs.forEach(
+input => {
+
+const id =
+input.id
+.replace(
+"away-score-",
+""
+)
+.replace(
+"home-score-",
+""
+);
+
+gameIds.add(id);
+
+});
+
 for (
-const select
-of selects
+const gameId of gameIds
 ) {
 
-const winner =
-select.value;
+const awayInput =
+document.getElementById(
+"away-score-" + gameId
+);
 
-if (!winner) {
+const homeInput =
+document.getElementById(
+"home-score-" + gameId
+);
+
+const awayScore =
+awayInput.value.trim();
+
+const homeScore =
+homeInput.value.trim();
+
+
+// Don't save incomplete games.
+
+if (
+awayScore === "" ||
+homeScore === ""
+) {
+
+skippedCount++;
 
 continue;
 
 }
 
-const gameId =
-select.dataset.gameId;
+const awayPoints =
+Number(awayScore);
 
+const homePoints =
+Number(homeScore);
+
+if (
+Number.isNaN(awayPoints) ||
+Number.isNaN(homePoints) ||
+awayPoints < 0 ||
+homePoints < 0
+) {
+
+throw new Error(
+"Invalid score entered for game " +
+gameId
+);
+
+}
+
+
+// Ties are left without a winner.
+
+let winner = null;
+
+if (
+awayPoints > homePoints
+) {
+
+const {
+data: game,
+error
+} =
+await supabaseClient
+.from("games")
+.select(
+"team1"
+)
+.eq(
+"id",
+gameId
+)
+.single();
+
+if (error) {
+throw error;
+}
+
+winner =
+game.team1;
+
+}
+
+else if (
+homePoints > awayPoints
+) {
+
+const {
+data: game,
+error
+} =
+await supabaseClient
+.from("games")
+.select(
+"team2"
+)
+.eq(
+"id",
+gameId
+)
+.single();
+
+if (error) {
+throw error;
+}
+
+winner =
+game.team2;
+
+}
+
+
+// ==================================================
+// SAVE SCORES + WINNER
+// ==================================================
 
 const {
 error
@@ -1062,6 +1158,12 @@ error
 await supabaseClient
 .from("games")
 .update({
+
+away_score:
+awayPoints,
+
+home_score:
+homePoints,
 
 Winner:
 winner
@@ -1072,11 +1174,8 @@ winner
 gameId
 );
 
-
 if (error) {
-
 throw error;
-
 }
 
 savedCount++;
@@ -1084,22 +1183,19 @@ savedCount++;
 }
 
 
-if (
-savedCount === 0
-) {
-
 message.innerText =
-"Please select at least one winner.";
-
-return;
-
-}
-
-
-message.innerText =
-"✅ Results saved successfully! " +
+"✅ Results saved! " +
 savedCount +
-" game(s) updated.";
+" game(s) updated." +
+(
+skippedCount > 0
+?
+" " +
+skippedCount +
+" unfinished game(s) skipped."
+:
+""
+);
 
 }
 
