@@ -118,12 +118,6 @@ font-size: 18px;
 margin-right: 4px;
 }
 
-hr {
-margin: 30px 0;
-border: 0;
-border-top: 2px solid #c9e9fa;
-}
-
 .info {
 background: #e5f5ff;
 border: 1px solid #c1e5f5;
@@ -142,10 +136,35 @@ color: #246b94;
 font-weight: bold;
 }
 
+.spread-row {
+display: flex;
+align-items: center;
+gap: 12px;
+margin: 8px 0;
+}
+
+.spread-team {
+flex: 1;
+font-weight: bold;
+}
+
+.spread-input {
+width: 100px;
+margin: 0;
+text-align: center;
+font-weight: bold;
+}
+
 #message,
 #resultsMessage {
 font-weight: bold;
 color: #17618a;
+}
+
+hr {
+margin: 30px 0;
+border: 0;
+border-top: 2px solid #c9e9fa;
 }
 
 </style>
@@ -257,16 +276,138 @@ SUPABASE_URL,
 SUPABASE_KEY
 );
 
-
-// ==================================================
-// CURRENTLY LOADED GAMES
-// ==================================================
-
 let loadedGames = [];
 
 
 // ==================================================
-// LOAD WEEK GAMES FROM DATABASE
+// PARSE EXISTING SPREAD
+// ==================================================
+
+function parseSpread(spread, team1, team2) {
+
+if (!spread) {
+
+return {
+team1: "",
+team2: ""
+};
+
+}
+
+const parts =
+spread.split("/");
+
+let team1Spread = "";
+let team2Spread = "";
+
+parts.forEach(
+part => {
+
+part =
+part.trim();
+
+if (
+part.startsWith(team1)
+) {
+
+team1Spread =
+part
+.substring(team1.length)
+.trim();
+
+}
+
+if (
+part.startsWith(team2)
+) {
+
+team2Spread =
+part
+.substring(team2.length)
+.trim();
+
+}
+
+});
+
+return {
+
+team1:
+team1Spread,
+
+team2:
+team2Spread
+
+};
+
+}
+
+
+// ==================================================
+// FORMAT SPREAD
+// ==================================================
+
+function formatSpread(
+team1,
+team1Spread,
+team2,
+team2Spread
+) {
+
+team1Spread =
+team1Spread.trim();
+
+team2Spread =
+team2Spread.trim();
+
+if (
+team1Spread &&
+!team1Spread.startsWith("+") &&
+!team1Spread.startsWith("-")
+) {
+
+team1Spread =
+"+" +
+team1Spread;
+
+}
+
+if (
+team2Spread &&
+!team2Spread.startsWith("+") &&
+!team2Spread.startsWith("-")
+) {
+
+team2Spread =
+"+" +
+team2Spread;
+
+}
+
+if (
+!team1Spread &&
+!team2Spread
+) {
+
+return "";
+
+}
+
+return (
+team1 +
+" " +
+team1Spread +
+" / " +
+team2 +
+" " +
+team2Spread
+);
+
+}
+
+
+// ==================================================
+// LOAD WEEK GAMES
 // ==================================================
 
 async function loadWeekGames() {
@@ -283,7 +424,9 @@ const gamesContainer =
 document.getElementById("games");
 
 message.innerText =
-"Loading Week " + week + " games...";
+"Loading Week " +
+week +
+" games...";
 
 gamesContainer.innerHTML = "";
 
@@ -379,6 +522,14 @@ minute: "2-digit"
 "Not entered";
 
 
+const parsed =
+parseSpread(
+game.spread,
+game.team1,
+game.team2
+);
+
+
 gameDiv.innerHTML = `
 
 <h3>
@@ -408,16 +559,37 @@ ${game.home_team || game.team2}
 ${gameTime}
 </div>
 
-<label>
-<strong>Point Spread</strong>
-</label>
+<div class="spread-row">
+
+<div class="spread-team">
+${game.team1}
+</div>
 
 <input
+class="spread-input"
 type="text"
-id="spread-${game.id}"
-value="${game.spread || ""}"
-placeholder="Example: Patriots +3.5 / Seahawks -3.5"
+id="spread1-${game.id}"
+value="${parsed.team1}"
+placeholder="+3.5"
 >
+
+</div>
+
+<div class="spread-row">
+
+<div class="spread-team">
+🏠 ${game.team2}
+</div>
+
+<input
+class="spread-input"
+type="text"
+id="spread2-${game.id}"
+value="${parsed.team2}"
+placeholder="-3.5"
+>
+
+</div>
 
 `;
 
@@ -431,7 +603,7 @@ gameDiv
 message.innerText =
 "Week " +
 week +
-" loaded. Review the games, then click Save Week.";
+" loaded. Enter or review the spreads, then click Save Week.";
 
 }
 
@@ -453,12 +625,6 @@ error.message;
 
 // ==================================================
 // SAVE WEEK
-// ==================================================
-//
-// Only updates spreads.
-// Does NOT change game IDs,
-// teams, winners, or scores.
-//
 // ==================================================
 
 async function saveWeek() {
@@ -497,18 +663,38 @@ const game
 of loadedGames
 ) {
 
-const spreadInput =
+const spread1Input =
 document.getElementById(
-"spread-" +
+"spread1-" +
+game.id
+);
+
+const spread2Input =
+document.getElementById(
+"spread2-" +
 game.id
 );
 
 const spread =
-spreadInput
+formatSpread(
+
+game.team1,
+
+spread1Input
 ?
-spreadInput.value.trim()
+spread1Input.value
 :
-game.spread || "";
+"",
+
+game.team2,
+
+spread2Input
+?
+spread2Input.value
+:
+""
+
+);
 
 
 const {
@@ -682,8 +868,11 @@ ${game.team1}
 @
 
 <span class="home-team">
+
 <span class="home-icon">🏠</span>
+
 ${game.team2}
+
 </span>
 
 </h3>
@@ -720,7 +909,7 @@ game.home_score !== null
 ?
 
 `${game.team1}: ${game.away_score}
-— 
+—
 ${game.team2}: ${game.home_score}`
 
 :
