@@ -673,10 +673,59 @@ confidence;
 
 });
 
-
 // ==================================================
 // BUILD SEASON DATA
 // ==================================================
+
+// Get every game with saved final scores
+const {
+data: seasonGames,
+error: seasonGamesError
+} =
+await supabaseClient
+.from("games")
+.select(
+"id,week,team1,team2,home_team,spread,home_score,away_score"
+);
+
+if (seasonGamesError) {
+
+console.error(
+"Season games error:",
+seasonGamesError
+);
+
+status.innerText =
+"Error loading season games.";
+
+return;
+
+}
+
+
+const seasonResults = {};
+
+seasonGames.forEach(
+game => {
+
+const hasScores =
+game.home_score !== null &&
+game.home_score !== undefined &&
+game.away_score !== null &&
+game.away_score !== undefined;
+
+seasonResults[game.id] = {
+
+completed:
+hasScores,
+
+game:
+game
+
+};
+
+});
+
 
 const seasonData = {};
 
@@ -699,7 +748,7 @@ const player =
 pick["player-name"];
 
 const result =
-results[pick.game_id];
+seasonResults[pick.game_id];
 
 if (
 result &&
