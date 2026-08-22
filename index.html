@@ -90,6 +90,32 @@ padding: 15px;
 margin-top: 20px;
 }
 
+.qr-card {
+background: #f3f8fc;
+border: 1px solid #d6e4ef;
+border-radius: 10px;
+padding: 20px;
+margin-top: 25px;
+text-align: center;
+}
+
+.qr-card h3 {
+margin-top: 0;
+}
+
+.qr-card img {
+display: block;
+margin: 15px auto;
+width: 220px;
+height: 220px;
+}
+
+.qr-text {
+font-size: 14px;
+color: #6b7280;
+margin-bottom: 0;
+}
+
 footer {
 text-align: center;
 color: #6b7280;
@@ -117,8 +143,6 @@ Make your picks. Follow the games. Compete for the championship.
 
 <h2>Welcome!</h2>
 
-
-
 <a class="button pick" href="player.html">
 🏈 MAKE YOUR PICKS
 </a>
@@ -131,7 +155,32 @@ Make your picks. Follow the games. Compete for the championship.
 🏆 SEASON LEADERBOARD
 </a>
 
+
+<!-- ==================================================
+QR CODE
+================================================== -->
+
+<div class="qr-card">
+
+<h3>📱 Open the Pool on Your Phone</h3>
+
+<p>
+Scan this QR code with your phone camera.
+</p>
+
+<img
+src="https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https%3A%2F%2Flamfamfootball.github.io%2Ffootball-confidence-pool%2F"
+alt="QR Code for LamFam Football Pool"
+>
+
+<p class="qr-text">
+LamFam Football Pool
+</p>
+
 </div>
+
+</div>
+
 
 <div class="card info">
 
@@ -168,6 +217,7 @@ Every correct pick adds to your total season wins.
 </div>
 
 </div>
+
 
 <div class="card">
 
