@@ -529,10 +529,6 @@ playerStatus.innerText =
 "Verifying...";
 
 
-// ==================================================
-// SECURE SUPABASE PLAYER VERIFICATION
-// ==================================================
-
 const {
 data,
 error
@@ -563,10 +559,6 @@ return;
 }
 
 
-// ==================================================
-// NO MATCH
-// ==================================================
-
 if (
 !data ||
 data.length === 0
@@ -590,10 +582,6 @@ return;
 
 }
 
-
-// ==================================================
-// PLAYER VERIFIED
-// ==================================================
 
 const player =
 data[0];
@@ -619,7 +607,6 @@ document.getElementById(
 false;
 
 
-// Load selected week
 loadSelectedWeek();
 
 }
@@ -893,10 +880,20 @@ select => {
 
 select.addEventListener(
 "change",
-updateSummary
+() => {
+
+updateSummary();
+
+updateConfidenceOptions();
+
+}
 );
 
 });
+
+
+// Initial confidence update
+updateConfidenceOptions();
 
 
 // ==================================================
@@ -1028,6 +1025,91 @@ document.getElementById(
 "pointsUsed"
 ).innerText =
 pointsAssigned;
+
+}
+
+
+// ==================================================
+// GRAY OUT USED CONFIDENCE POINTS
+// ==================================================
+
+function updateConfidenceOptions() {
+
+const confidenceSelects =
+document.querySelectorAll(
+".confidence"
+);
+
+
+const selectedValues = [];
+
+
+confidenceSelects.forEach(
+select => {
+
+if (
+select.value !== ""
+) {
+
+selectedValues.push(
+select.value
+);
+
+}
+
+});
+
+
+confidenceSelects.forEach(
+select => {
+
+const currentValue =
+select.value;
+
+
+Array.from(
+select.options
+)
+.forEach(
+option => {
+
+if (
+option.value === ""
+) {
+
+return;
+
+}
+
+
+if (
+selectedValues.includes(
+option.value
+)
+&&
+option.value !==
+currentValue
+) {
+
+option.disabled =
+true;
+
+}
+
+else {
+
+option.disabled =
+false;
+
+}
+
+}
+
+);
+
+}
+
+);
 
 }
 
