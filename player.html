@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -24,6 +25,10 @@ text-align: center;
 padding: 25px 15px;
 }
 
+header h1 {
+margin: 0;
+}
+
 main {
 max-width: 700px;
 margin: 20px auto;
@@ -46,17 +51,32 @@ border-radius: 8px;
 border: 1px solid #d6e4ef;
 }
 
-.team {
+.team-label {
+font-size: 14px;
+font-weight: bold;
+margin-top: 8px;
+}
+
+.away-label {
+color: #2563eb;
+}
+
+.home-label {
+color: #16a34a;
+}
+
+.away-team {
+color: #2563eb;
 font-weight: bold;
 font-size: 18px;
 margin: 5px 0;
 }
 
-.team-label {
-font-size: 14px;
-color: #527a9d;
+.home-team {
+color: #16a34a;
 font-weight: bold;
-margin-top: 8px;
+font-size: 18px;
+margin: 5px 0;
 }
 
 select,
@@ -769,23 +789,19 @@ game.team1;
 
 div.innerHTML = `
 
-<div style="
-font-size:14px;
-color:#527a9d;
-font-weight:bold;
-">
-Away Team
+<div class="team-label away-label">
+✈️ Away Team
 </div>
 
-<div class="team">
+<div class="away-team">
 ${awayTeam}
 </div>
 
-<div class="team-label">
+<div class="team-label home-label">
 🏠 Home Team
 </div>
 
-<div class="team">
+<div class="home-team">
 ${homeTeam}
 </div>
 
@@ -1478,3 +1494,4 @@ updateDeadlineMessage();
 
 </body>
 </html>
+```
