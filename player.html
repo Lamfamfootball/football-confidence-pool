@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -48,34 +49,6 @@ padding: 15px;
 margin-bottom: 12px;
 border-radius: 8px;
 border: 1px solid #d6e4ef;
-}
-
-.team-label {
-font-size: 14px;
-font-weight: bold;
-margin-top: 8px;
-}
-
-.away-label {
-color: #2563eb;
-}
-
-.home-label {
-color: #16a34a;
-}
-
-.away-team {
-color: #2563eb;
-font-weight: bold;
-font-size: 18px;
-margin: 5px 0;
-}
-
-.home-team {
-color: #16a34a;
-font-weight: bold;
-font-size: 18px;
-margin: 5px 0;
 }
 
 select,
@@ -143,6 +116,15 @@ padding: 15px;
 border-radius: 8px;
 margin-bottom: 20px;
 border: 1px solid #d6e4ef;
+text-align: center;
+}
+
+.week-selector label {
+text-align: center;
+}
+
+.week-selector select {
+text-align: center;
 }
 
 .load-button,
@@ -169,21 +151,15 @@ font-weight: bold;
 }
 
 .game-time {
-margin-top: 8px;
+margin-top: 12px;
 font-size: 14px;
 color: #6b7280;
-}
-
-.spread {
-margin-top: 8px;
-font-size: 14px;
-color: #4b5563;
 }
 
 .started {
 color: #a44a4a;
 font-weight: bold;
-margin-top: 10px;
+margin-top: 12px;
 }
 
 .player-box {
@@ -199,29 +175,183 @@ margin-top: 10px;
 font-weight: bold;
 }
 
-/* CENTERED MAKE YOUR PICKS TITLE */
-
 .make-picks-title {
 text-align: center;
 margin-top: 5px;
 margin-bottom: 20px;
 }
 
-/* CENTERED WEEK SELECTOR */
 
-.week-selector {
+/* ==================================================
+GAME PICK LAYOUT
+================================================== */
+
+.game-header {
+display: grid;
+grid-template-columns: 75px 1fr 1fr;
+gap: 10px;
+align-items: center;
+padding: 0 5px 8px;
+border-bottom: 1px solid #d6e4ef;
+margin-bottom: 10px;
+}
+
+.column-label {
+font-size: 12px;
+font-weight: bold;
+color: #6b7280;
 text-align: center;
 }
 
-.week-selector label {
+.column-label.team-heading {
 text-align: center;
 }
 
-.week-selector select {
+.game-grid {
+display: grid;
+grid-template-columns: 75px 1fr 1fr;
+gap: 10px;
+align-items: stretch;
+}
+
+.confidence-column {
+display: flex;
+flex-direction: column;
+justify-content: center;
+}
+
+.confidence-column .column-label {
+margin-bottom: 5px;
+}
+
+.confidence-column select {
+width: 100%;
+padding: 9px 4px;
+margin: 0;
 text-align: center;
+font-weight: bold;
+font-size: 16px;
+}
+
+.team-column {
+display: flex;
+align-items: stretch;
+}
+
+.team-choice {
+width: 100%;
+min-height: 75px;
+margin: 0;
+padding: 10px 6px;
+background: #ffffff;
+border: 2px solid #d6e4ef;
+border-radius: 8px;
+cursor: pointer;
+color: #1f2937;
+font-size: 16px;
+font-weight: bold;
+line-height: 1.25;
+}
+
+.team-choice:hover {
+background: #f3f8fc;
+}
+
+.team-choice.home-choice {
+color: #16a34a;
+}
+
+.team-choice.away-choice {
+color: #2563eb;
+}
+
+.team-choice.selected {
+border: 3px solid #4f81a8;
+background: #eaf4fb;
+box-shadow: 0 0 0 2px #d7ebf7;
+}
+
+.team-choice:disabled {
+cursor: not-allowed;
+opacity: 0.55;
+}
+
+.team-name {
+font-size: 18px;
+font-weight: bold;
+}
+
+.team-icon {
+font-size: 17px;
+margin-right: 3px;
+}
+
+.favorite-spread {
+font-size: 15px;
+font-weight: bold;
+margin-top: 5px;
+color: #374151;
+}
+
+.favorite-spread:before {
+content: "Spread: ";
+font-size: 12px;
+font-weight: normal;
+color: #6b7280;
+}
+
+.hidden-pick {
+display: none !important;
+}
+
+
+/* ==================================================
+MOBILE
+================================================== */
+
+@media (max-width: 520px) {
+
+main {
+padding: 10px;
+}
+
+.card {
+padding: 15px;
+}
+
+.game {
+padding: 10px;
+}
+
+.game-grid,
+.game-header {
+grid-template-columns: 65px 1fr 1fr;
+gap: 7px;
+}
+
+.team-choice {
+min-height: 82px;
+padding: 8px 4px;
+font-size: 14px;
+}
+
+.team-name {
+font-size: 16px;
+}
+
+.favorite-spread {
+font-size: 14px;
+}
+
+.confidence-column select {
+font-size: 15px;
+padding: 8px 2px;
+}
+
 }
 
 </style>
+
 </head>
 
 <body>
@@ -240,7 +370,6 @@ text-align: center;
 
 <h2 class="make-picks-title">🏈 Make Your Picks</h2>
 
-
 <!-- ==================================================
 PLAYER VERIFICATION
 ================================================== -->
@@ -256,6 +385,7 @@ type="text"
 id="playerName"
 placeholder="Enter your name"
 autocomplete="name"
+
 >
 
 <label>
@@ -268,22 +398,23 @@ id="playerPin"
 placeholder="Enter your 2-digit PIN"
 inputmode="numeric"
 maxlength="2"
+
 >
 
 <button
 type="button"
 class="verify-button"
 onclick="verifyPlayer()"
+
 >
-Verify Player
-</button>
+
+Verify Player </button>
 
 <p id="playerStatus">
 Enter your name and PIN.
 </p>
 
 </div>
-
 
 <!-- ==================================================
 WEEK SELECTOR
@@ -322,12 +453,12 @@ WEEK SELECTOR
 type="button"
 class="load-button"
 onclick="loadSelectedWeek()"
+
 >
-Load Week
-</button>
+
+Load Week </button>
 
 </div>
-
 
 <h2 id="weekTitle">
 Week 1
@@ -338,23 +469,19 @@ Choose exactly <strong>10 games</strong> and assign
 confidence points <strong>1–10</strong>.
 </p>
 
-
 <!-- ==================================================
 SUMMARY
 ================================================== -->
 
 <div class="summary">
 
-<strong>Selected games:</strong>
-<span id="selectedCount">0</span> / 10
+<strong>Selected games:</strong> <span id="selectedCount">0</span> / 10
 
 <br>
 
-<strong>Confidence points assigned:</strong>
-<span id="pointsUsed">0</span> / 10
+<strong>Confidence points assigned:</strong> <span id="pointsUsed">0</span> / 10
 
 </div>
-
 
 <!-- ==================================================
 DEADLINE
@@ -367,18 +494,15 @@ class="deadline-open"
 ⏰ Picks are open until Saturday at 11:59 PM.
 </p>
 
-
 <p id="status">
 Please verify your player first.
 </p>
-
 
 <!-- ==================================================
 GAME LIST
 ================================================== -->
 
 <div id="gameList"></div>
-
 
 <!-- ==================================================
 SUBMIT
@@ -389,16 +513,16 @@ type="button"
 id="submitButton"
 onclick="submitPicks()"
 disabled
+
 >
-Submit Picks
-</button>
+
+Submit Picks </button>
 
 <p id="submitMessage"></p>
 
 </div>
 
 </main>
-
 
 <script>
 
@@ -712,6 +836,99 @@ loadGames();
 
 
 // ==================================================
+// PARSE FAVORITE SPREAD
+// ==================================================
+
+function getFavoriteSpread(
+spread,
+team1,
+team2
+) {
+
+if (!spread) {
+
+return {
+team: null,
+spread: ""
+};
+
+}
+
+const parts =
+spread.split("/");
+
+let team1Spread = "";
+let team2Spread = "";
+
+parts.forEach(
+part => {
+
+part =
+part.trim();
+
+if (
+part.startsWith(team1)
+) {
+
+team1Spread =
+part
+.substring(
+team1.length
+)
+.trim();
+
+}
+
+if (
+part.startsWith(team2)
+) {
+
+team2Spread =
+part
+.substring(
+team2.length
+)
+.trim();
+
+}
+
+});
+
+
+// The negative spread identifies the favorite.
+
+if (
+team1Spread.startsWith("-")
+) {
+
+return {
+team: team1,
+spread: team1Spread
+};
+
+}
+
+if (
+team2Spread.startsWith("-")
+) {
+
+return {
+team: team2,
+spread: team2Spread
+};
+
+}
+
+
+return {
+team: null,
+spread: ""
+};
+
+}
+
+
+// ==================================================
 // LOAD GAMES
 // ==================================================
 
@@ -783,6 +1000,43 @@ status.innerText = "";
 gameList.innerHTML = "";
 
 
+// ==================================================
+// COLUMN HEADERS
+// ==================================================
+
+const header =
+document.createElement(
+"div"
+);
+
+header.className =
+"game-header";
+
+header.innerHTML = `
+
+<div class="column-label">
+Confidence
+</div>
+
+<div class="column-label team-heading">
+Home Team
+</div>
+
+<div class="column-label team-heading">
+Visitor
+</div>
+
+`;
+
+gameList.appendChild(
+header
+);
+
+
+// ==================================================
+// GAME CARDS
+// ==================================================
+
 data.forEach(
 game => {
 
@@ -808,68 +1062,40 @@ game.team2
 game.team1;
 
 
+// Find which team is the favorite.
+
+const favorite =
+getFavoriteSpread(
+game.spread,
+game.team1,
+game.team2
+);
+
+
+const homeSpread =
+favorite.team === homeTeam
+?
+favorite.spread
+:
+"";
+
+
+const awaySpread =
+favorite.team === awayTeam
+?
+favorite.spread
+:
+"";
+
+
 div.innerHTML = `
 
-<div class="team-label away-label">
-✈️ Away Team
-</div>
+<div class="game-grid">
 
-<div class="away-team">
-${awayTeam}
-</div>
 
-<div class="team-label home-label">
-🏠 Home Team
-</div>
+<!-- CONFIDENCE -->
 
-<div class="home-team">
-${homeTeam}
-</div>
-
-<div class="spread">
-<strong>Spread:</strong>
-${game.spread || "N/A"}
-</div>
-
-<div class="game-time">
-<strong>Game Time:</strong>
-${
-game.game_time
-?
-new Date(
-game.game_time
-).toLocaleString()
-:
-"Not entered"
-}
-</div>
-
-<label>
-Pick:
-
-<select
-class="pick-team"
-data-game-id="${game.id}"
->
-
-<option value="">
-Choose a team
-</option>
-
-<option value="${awayTeam}">
-✈️ ${awayTeam}
-</option>
-
-<option value="${homeTeam}">
-🏠 ${homeTeam}
-</option>
-
-</select>
-
-</label>
-
-<label>
-Confidence:
+<div class="confidence-column">
 
 <select
 class="confidence"
@@ -893,7 +1119,113 @@ Points
 
 </select>
 
-</label>
+</div>
+
+
+<!-- HOME TEAM -->
+
+<div class="team-column">
+
+<button
+type="button"
+class="team-choice home-choice"
+data-team="${homeTeam}"
+data-game-id="${game.id}"
+>
+
+<div class="team-name">
+
+🏠 ${homeTeam}
+
+</div>
+
+${
+homeSpread
+?
+`<div class="favorite-spread">
+${homeSpread}
+</div>`
+:
+""
+}
+
+</button>
+
+</div>
+
+
+<!-- VISITOR -->
+
+<div class="team-column">
+
+<button
+type="button"
+class="team-choice away-choice"
+data-team="${awayTeam}"
+data-game-id="${game.id}"
+>
+
+<div class="team-name">
+
+✈️ ${awayTeam}
+
+</div>
+
+${
+awaySpread
+?
+`<div class="favorite-spread">
+${awaySpread}
+</div>`
+:
+""
+}
+
+</button>
+
+</div>
+
+
+<!-- HIDDEN PICK VALUE -->
+
+<select
+class="pick-team hidden-pick"
+data-game-id="${game.id}"
+aria-hidden="true"
+>
+
+<option value="">
+Choose a team
+</option>
+
+<option value="${awayTeam}">
+${awayTeam}
+</option>
+
+<option value="${homeTeam}">
+${homeTeam}
+</option>
+
+</select>
+
+
+</div>
+
+<div class="game-time">
+
+<strong>Game Time:</strong>
+
+${
+game.game_time
+?
+new Date(
+game.game_time
+).toLocaleString()
+:
+"Not entered"
+}
+
+</div>
 
 `;
 
@@ -905,12 +1237,81 @@ div
 
 
 // ==================================================
-// CHANGE LISTENERS
+// TEAM CLICK LISTENERS
 // ==================================================
 
 document
 .querySelectorAll(
-".pick-team, .confidence"
+".team-choice"
+)
+.forEach(
+button => {
+
+button.addEventListener(
+"click",
+() => {
+
+const gameId =
+button.dataset.gameId;
+
+const selectedTeam =
+button.dataset.team;
+
+const gameCard =
+button.closest(
+".game"
+);
+
+const pickSelect =
+gameCard.querySelector(
+".pick-team"
+);
+
+
+// Select the clicked team.
+
+pickSelect.value =
+selectedTeam;
+
+
+// Remove highlight from both teams.
+
+gameCard
+.querySelectorAll(
+".team-choice"
+)
+.forEach(
+teamButton => {
+
+teamButton.classList.remove(
+"selected"
+);
+
+});
+
+
+// Highlight selected team.
+
+button.classList.add(
+"selected"
+);
+
+
+updateSummary();
+
+}
+);
+
+});
+
+
+// ==================================================
+// CONFIDENCE LISTENERS
+// ==================================================
+
+document
+.querySelectorAll(
+".confidence"
 )
 .forEach(
 select => {
@@ -929,7 +1330,8 @@ updateConfidenceOptions();
 });
 
 
-// Initial confidence update
+// Initial confidence update.
+
 updateConfidenceOptions();
 
 
@@ -960,25 +1362,44 @@ document.querySelectorAll(
 )[index];
 
 
-const pickSelect =
-gameCard.querySelector(
-".pick-team"
+// index is offset by the header.
+
+const actualGameCard =
+document.querySelectorAll(
+".game"
+)[index];
+
+
+if (!actualGameCard) {
+return;
+}
+
+
+const teamButtons =
+actualGameCard.querySelectorAll(
+".team-choice"
 );
 
 const confidenceSelect =
-gameCard.querySelector(
+actualGameCard.querySelector(
 ".confidence"
 );
 
 
-pickSelect.disabled =
+teamButtons.forEach(
+button => {
+
+button.disabled =
 true;
+
+});
+
 
 confidenceSelect.disabled =
 true;
 
 
-gameCard.style.opacity =
+actualGameCard.style.opacity =
 "0.6";
 
 
@@ -993,7 +1414,7 @@ startedMessage.className =
 startedMessage.innerText =
 "🔒 Game has started — picks are closed for this game.";
 
-gameCard.appendChild(
+actualGameCard.appendChild(
 startedMessage
 );
 
@@ -1480,12 +1901,12 @@ currentWeek +
 
 document
 .querySelectorAll(
-".pick-team, .confidence"
+".pick-team, .confidence, .team-choice"
 )
 .forEach(
-select => {
+element => {
 
-select.disabled =
+element.disabled =
 true;
 
 });
