@@ -978,9 +978,13 @@ error.message;
 async function loadPlayers() {
 
 const playerSelect =
-document.getElementById(
-"editPlayer"
-);
+document.getElementById("editPlayer");
+
+const message =
+document.getElementById("editMessage");
+
+playerSelect.innerHTML =
+'<option value="">Loading players...</option>';
 
 try {
 
@@ -991,15 +995,29 @@ error
 await supabaseClient
 .from("Players")
 .select("id,name")
-.order(
-"name",
-{
+.order("name", {
 ascending: true
-}
-);
+});
 
 if (error) {
 throw error;
+}
+
+console.log("Players returned:", players);
+
+playerSelect.innerHTML =
+'<option value="">Select Player</option>';
+
+if (!players || players.length === 0) {
+
+playerSelect.innerHTML =
+'<option value="">No players found</option>';
+
+message.innerText =
+"No players were returned from the Players table.";
+
+return;
+
 }
 
 players.forEach(
@@ -1020,6 +1038,10 @@ option
 
 });
 
+message.innerText =
+players.length +
+" players loaded.";
+
 }
 
 catch (error) {
@@ -1029,16 +1051,16 @@ console.error(
 error
 );
 
-document.getElementById(
-"editMessage"
-).innerText =
-"Error loading players: " +
+playerSelect.innerHTML =
+'<option value="">Error loading players</option>';
+
+message.innerText =
+"ERROR loading players: " +
 error.message;
 
 }
 
 }
-
 
 // ==================================================
 // LOAD PLAYER PICKS
