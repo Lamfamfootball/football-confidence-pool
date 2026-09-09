@@ -993,7 +993,7 @@ data: players,
 error
 } =
 await supabaseClient
-.from("Players")
+.from("players")
 .select("id,name")
 .order("name", {
 ascending: true
