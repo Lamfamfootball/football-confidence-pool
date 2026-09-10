@@ -9,6 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
+
 body {
 margin: 0;
 font-family: Arial, sans-serif;
@@ -145,17 +146,89 @@ font-size: 12px;
 color: #374151;
 margin-top: 3px;
 }
+
+
+/* ==================================================
+   GAME RESULTS
+   ================================================== */
+
+.game-results {
+width: 100%;
+border-collapse: collapse;
+margin-top: 10px;
+}
+
+.game-results th,
+.game-results td {
+border: 1px solid #d1d5db;
+padding: 10px;
+text-align: center;
+}
+
+.game-results th {
+background: #111827;
+color: white;
+}
+
+.game-team {
+font-weight: bold;
+font-size: 16px;
+}
+
+.game-score {
+font-size: 20px;
+font-weight: bold;
+width: 70px;
+}
+
+.game-winner {
+background: #bbf7d0 !important;
+color: #166534;
+font-weight: bold;
+}
+
+.game-loser {
+background: #fecaca !important;
+color: #991b1b;
+}
+
+.game-pending {
+background: #f3f4f6;
+color: #6b7280;
+}
+
+.game-vs {
+font-weight: bold;
+color: #6b7280;
+width: 45px;
+}
+
+.favorite-spread {
+font-size: 13px;
+font-weight: bold;
+margin-left: 5px;
+}
+
 </style>
 </head>
 
 <body>
 
 <header>
+
 <h1>🏈 LamFam 2026-2027 — Live Weekly Picks</h1>
-<p>Watch the pool standings change as games finish</p>
+
+<p>
+Watch the pool standings change as games finish
+</p>
+
 </header>
 
+
 <main>
+
+
+<!-- CONTROLS -->
 
 <div class="card">
 
@@ -194,7 +267,9 @@ Refresh
 
 </div>
 
-<p id="status">Loading...</p>
+<p id="status">
+Loading...
+</p>
 
 <p class="small">
 Weekly confidence points reset each week. Season wins accumulate throughout the season.
@@ -225,6 +300,19 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 </div>
 
 
+<!-- GAME RESULTS -->
+
+<div class="card">
+
+<h2>🏈 Game Results</h2>
+
+<div id="gameResults">
+Loading game results...
+</div>
+
+</div>
+
+
 <!-- PICKS -->
 
 <div class="card">
@@ -241,10 +329,12 @@ Loading picks...
 
 </div>
 
+
 </main>
 
 
 <script>
+
 
 const SUPABASE_URL =
 "https://bgkcnsnydchfghyhwurw.supabase.co";
@@ -306,6 +396,266 @@ return spread;
 }
 
 return null;
+
+}
+
+
+// ==================================================
+// GET FAVORITE
+// ==================================================
+
+function getFavoriteForGame(game) {
+
+const team1Spread =
+parseSpreadForTeam(
+game.spread,
+game.team1
+);
+
+const team2Spread =
+parseSpreadForTeam(
+game.spread,
+game.team2
+);
+
+
+// Only show the negative spread
+
+if (
+team1Spread !== null &&
+team1Spread < 0
+) {
+
+return {
+team: game.team1,
+spread: team1Spread
+};
+
+}
+
+
+if (
+team2Spread !== null &&
+team2Spread < 0
+) {
+
+return {
+team: game.team2,
+spread: team2Spread
+};
+
+}
+
+
+return null;
+
+}
+
+
+// ==================================================
+// BUILD GAME RESULTS
+// ==================================================
+
+function buildGameResults(games) {
+
+if (!games || games.length === 0) {
+
+document.getElementById(
+"gameResults"
+).innerHTML =
+"<p>No games found for this week.</p>";
+
+return;
+
+}
+
+
+let html = `
+
+<table class="game-results">
+
+<thead>
+
+<tr>
+
+<th>AWAY TEAM</th>
+<th>SCORE</th>
+<th></th>
+<th>SCORE</th>
+<th>HOME TEAM</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+`;
+
+
+games.forEach(game => {
+
+const homeTeam =
+game.home_team;
+
+const awayTeam =
+homeTeam === game.team1
+? game.team2
+: game.team1;
+
+
+const awayScore =
+game.away_score;
+
+const homeScore =
+game.home_score;
+
+
+const hasScores =
+awayScore !== null &&
+awayScore !== undefined &&
+homeScore !== null &&
+homeScore !== undefined;
+
+
+let awayClass =
+"game-pending";
+
+let homeClass =
+"game-pending";
+
+let awayIcon =
+"";
+
+let homeIcon =
+"";
+
+
+if (hasScores) {
+
+if (
+Number(awayScore) >
+Number(homeScore)
+) {
+
+awayClass =
+"game-winner";
+
+homeClass =
+"game-loser";
+
+awayIcon =
+" 🏆";
+
+}
+else if (
+Number(homeScore) >
+Number(awayScore)
+) {
+
+homeClass =
+"game-winner";
+
+awayClass =
+"game-loser";
+
+homeIcon =
+" 🏆";
+
+}
+
+}
+
+
+// --------------------------------------------------
+// FAVORITE
+// --------------------------------------------------
+
+const favorite =
+getFavoriteForGame(game);
+
+
+let awayName =
+awayTeam;
+
+let homeName =
+homeTeam;
+
+
+if (
+favorite &&
+favorite.team === awayTeam
+) {
+
+awayName +=
+` <span class="favorite-spread">
+${favorite.spread}
+</span>`;
+
+}
+
+
+if (
+favorite &&
+favorite.team === homeTeam
+) {
+
+homeName +=
+` <span class="favorite-spread">
+${favorite.spread}
+</span>`;
+
+}
+
+
+// --------------------------------------------------
+// ROW
+// --------------------------------------------------
+
+html += `
+
+<tr>
+
+<td class="game-team ${awayClass}">
+${awayName}${awayIcon}
+</td>
+
+<td class="game-score ${awayClass}">
+${hasScores ? awayScore : "—"}
+</td>
+
+<td class="game-vs">
+vs.
+</td>
+
+<td class="game-score ${homeClass}">
+${hasScores ? homeScore : "—"}
+</td>
+
+<td class="game-team ${homeClass}">
+${homeIcon}${homeName}
+</td>
+
+</tr>
+
+`;
+
+});
+
+
+html += `
+
+</tbody>
+
+</table>
+
+`;
+
+
+document.getElementById(
+"gameResults"
+).innerHTML =
+html;
 
 }
 
@@ -578,6 +928,15 @@ game
 
 
 // ==================================================
+// BUILD GAME RESULTS DISPLAY
+// ==================================================
+
+buildGameResults(
+updatedGames
+);
+
+
+// ==================================================
 // BUILD PLAYER LIST
 // ==================================================
 
@@ -673,11 +1032,11 @@ confidence;
 
 });
 
+
 // ==================================================
 // BUILD SEASON DATA
 // ==================================================
 
-// Get every game with saved final scores
 const {
 data: seasonGames,
 error: seasonGamesError
@@ -804,6 +1163,7 @@ let weeklyHtml = `
 </thead>
 
 <tbody>
+
 `;
 
 
@@ -829,6 +1189,7 @@ ${weeklyData[player].points}
 </td>
 
 </tr>
+
 `;
 
 });
@@ -837,7 +1198,9 @@ ${weeklyData[player].points}
 weeklyHtml += `
 
 </tbody>
+
 </table>
+
 `;
 
 document.getElementById(
@@ -879,6 +1242,7 @@ let seasonHtml = `
 </thead>
 
 <tbody>
+
 `;
 
 
@@ -904,6 +1268,7 @@ ${seasonData[player].wins}
 </td>
 
 </tr>
+
 `;
 
 });
@@ -912,7 +1277,9 @@ ${seasonData[player].wins}
 seasonHtml += `
 
 </tbody>
+
 </table>
+
 `;
 
 document.getElementById(
@@ -974,7 +1341,9 @@ let html = `
 <th class="confidence">
 Confidence
 </th>
+
 `;
+
 
 displayPlayers.forEach(
 player => {
@@ -984,9 +1353,11 @@ html += `
 <th class="player-header">
 ${player}
 </th>
+
 `;
 
 });
+
 
 html += `
 
@@ -995,6 +1366,7 @@ html += `
 </thead>
 
 <tbody>
+
 `;
 
 
@@ -1015,7 +1387,9 @@ html += `
 <td class="confidence">
 ${confidence}
 </td>
+
 `;
+
 
 displayPlayers.forEach(
 player => {
@@ -1025,6 +1399,7 @@ playerData[player].picks[
 confidence
 ];
 
+
 if (!pick) {
 
 html += `
@@ -1032,17 +1407,20 @@ html += `
 <td class="pending">
 —
 </td>
+
 `;
 
 return;
 
 }
 
+
 const result =
 results[pick.gameId];
 
 let className =
 "pending";
+
 
 if (
 result &&
@@ -1068,22 +1446,24 @@ className =
 
 }
 
+
 html += `
 
 <td class="pick ${className}">
 
 ${pick.team}
 
-
-
 </td>
+
 `;
 
 });
 
+
 html += `
 
 </tr>
+
 `;
 
 }
@@ -1100,7 +1480,9 @@ html += `
 <td class="confidence">
 TOTAL
 </td>
+
 `;
+
 
 displayPlayers.forEach(
 player => {
@@ -1110,20 +1492,27 @@ html += `
 <td class="total">
 ${playerData[player].points}
 </td>
+
 `;
 
 });
 
+
 html += `
 
 </tr>
+
 `;
+
 
 html += `
 
 </tbody>
+
 </table>
+
 `;
+
 
 document.getElementById(
 "liveTable"
