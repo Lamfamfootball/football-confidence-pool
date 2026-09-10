@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 
 <html lang="en">
@@ -614,6 +615,18 @@ return;
 }
 
 
+// ==================================================
+// SORT GAMES BY KICKOFF TIME
+// ==================================================
+
+games
+.sort(
+(a, b) =>
+new Date(a.game_time) -
+new Date(b.game_time)
+);
+
+
 let html = `
 
 <table class="game-results">
@@ -1029,7 +1042,7 @@ error: gamesError
 await supabaseClient
 .from("games")
 .select(
-"id,week,team1,team2,home_team,spread,home_score,away_score"
+"id,week,team1,team2,home_team,spread,home_score,away_score,game_time"
 )
 .eq(
 "week",
@@ -1136,7 +1149,7 @@ error: updatedGamesError
 await supabaseClient
 .from("games")
 .select(
-"id,week,team1,team2,home_team,spread,home_score,away_score"
+"id,week,team1,team2,home_team,spread,home_score,away_score,game_time"
 )
 .eq(
 "week",
@@ -1812,3 +1825,4 @@ loadLivePicks,
 
 </body>
 </html>
+```
