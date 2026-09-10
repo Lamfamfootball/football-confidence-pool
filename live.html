@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -234,6 +235,7 @@ margin-left: 5px;
 }
 
 </style>
+
 </head>
 
 <body>
@@ -248,9 +250,7 @@ Watch the pool standings change as games finish
 
 </header>
 
-
 <main>
-
 
 <!-- ==================================================
      CONTROLS
@@ -303,7 +303,6 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 
 </div>
 
-
 <!-- ==================================================
      CURRENT WEEK
      ================================================== -->
@@ -316,7 +315,6 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 
 </div>
 
-
 <!-- ==================================================
      SEASON
      ================================================== -->
@@ -328,7 +326,6 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 <div id="seasonStandings"></div>
 
 </div>
-
 
 <!-- ==================================================
      GAME RESULTS
@@ -343,7 +340,6 @@ Loading game results...
 </div>
 
 </div>
-
 
 <!-- ==================================================
      PLAYER PICKS
@@ -363,9 +359,7 @@ Loading picks...
 
 </div>
 
-
 </main>
-
 
 <script>
 
@@ -683,6 +677,119 @@ let homeIcon =
 
 if (hasScores) {
 
+
+// ==================================================
+// ACTUAL GAME WINNER — USED ONLY FOR TROPHY
+// ==================================================
+
+if (
+Number(awayScore) >
+Number(homeScore)
+) {
+
+awayIcon =
+" 🏆";
+
+}
+else if (
+Number(homeScore) >
+Number(awayScore)
+) {
+
+homeIcon =
+" 🏆";
+
+}
+
+
+// ==================================================
+// AGAINST-THE-SPREAD RESULT
+// ==================================================
+
+const awaySpread =
+parseSpreadForTeam(
+game.spread,
+awayTeam
+);
+
+const homeSpread =
+parseSpreadForTeam(
+game.spread,
+homeTeam
+);
+
+
+// If both spreads are available,
+// determine who covered.
+
+if (
+awaySpread !== null &&
+homeSpread !== null
+) {
+
+const awayAdjustedScore =
+Number(awayScore) +
+awaySpread;
+
+const homeAdjustedScore =
+Number(homeScore) +
+homeSpread;
+
+
+// Away team covered
+
+if (
+awayAdjustedScore >
+homeAdjustedScore
+) {
+
+awayClass =
+"game-winner";
+
+homeClass =
+"game-loser";
+
+}
+
+
+// Home team covered
+
+else if (
+homeAdjustedScore >
+awayAdjustedScore
+) {
+
+homeClass =
+"game-winner";
+
+awayClass =
+"game-loser";
+
+}
+
+
+// Push — both sides get green,
+// matching the pool's push-as-win rule.
+
+else {
+
+awayClass =
+"game-winner";
+
+homeClass =
+"game-winner";
+
+}
+
+}
+
+
+// ==================================================
+// FALLBACK IF SPREAD IS NOT AVAILABLE
+// ==================================================
+
+else {
+
 if (
 Number(awayScore) >
 Number(homeScore)
@@ -693,9 +800,6 @@ awayClass =
 
 homeClass =
 "game-loser";
-
-awayIcon =
-" 🏆";
 
 }
 else if (
@@ -709,8 +813,16 @@ homeClass =
 awayClass =
 "game-loser";
 
-homeIcon =
-" 🏆";
+}
+else {
+
+awayClass =
+"game-winner";
+
+homeClass =
+"game-winner";
+
+}
 
 }
 
@@ -726,10 +838,10 @@ getFavoriteForGame(game);
 
 
 let awayName =
-awayTeam;
+getMascotName(awayTeam);
 
 let homeName =
-homeTeam;
+getMascotName(homeTeam);
 
 
 if (
@@ -1009,10 +1121,6 @@ console.error(
 "Score update error:",
 error
 );
-
-// Do NOT stop the page.
-// It can still display whatever
-// scores are already stored.
 
 }
 
