@@ -30,7 +30,7 @@ font-size: 28px;
 }
 
 main {
-max-width: 1600px;
+max-width: 1200px;
 margin: 20px auto;
 padding: 15px;
 }
@@ -69,9 +69,10 @@ cursor: pointer;
 font-weight: bold;
 }
 
-.table-wrapper {
-overflow-x: auto;
-}
+
+/* ==================================================
+   NORMAL TABLES
+   ================================================== */
 
 table {
 border-collapse: collapse;
@@ -82,7 +83,7 @@ min-width: 100%;
 th,
 td {
 border: 1px solid #d1d5db;
-padding: 7px 8px;
+padding: 10px;
 text-align: center;
 white-space: nowrap;
 }
@@ -92,12 +93,22 @@ background: #111827;
 color: white;
 }
 
-.confidence {
-font-weight: bold;
-background: #e5e7eb;
-position: sticky;
-left: 0;
-z-index: 2;
+
+/* ==================================================
+   PLAYER PICKS — EXTRA WIDE
+   ================================================== */
+
+.player-picks-wrapper {
+overflow-x: auto;
+width: 100vw;
+margin-left: calc(50% - 50vw);
+padding: 0 20px;
+box-sizing: border-box;
+}
+
+.player-picks-wrapper table {
+width: max-content;
+min-width: 100%;
 }
 
 .player-header {
@@ -107,6 +118,19 @@ min-width: 100px;
 .pick {
 min-width: 100px;
 font-weight: bold;
+}
+
+
+/* ==================================================
+   PICK COLORS
+   ================================================== */
+
+.confidence {
+font-weight: bold;
+background: #e5e7eb;
+position: sticky;
+left: 0;
+z-index: 2;
 }
 
 .pending {
@@ -228,7 +252,9 @@ Watch the pool standings change as games finish
 <main>
 
 
-<!-- CONTROLS -->
+<!-- ==================================================
+     CONTROLS
+     ================================================== -->
 
 <div class="card">
 
@@ -278,7 +304,9 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 </div>
 
 
-<!-- CURRENT WEEK -->
+<!-- ==================================================
+     CURRENT WEEK
+     ================================================== -->
 
 <div class="card">
 
@@ -289,7 +317,9 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 </div>
 
 
-<!-- SEASON -->
+<!-- ==================================================
+     SEASON
+     ================================================== -->
 
 <div class="card">
 
@@ -300,7 +330,9 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 </div>
 
 
-<!-- GAME RESULTS -->
+<!-- ==================================================
+     GAME RESULTS
+     ================================================== -->
 
 <div class="card">
 
@@ -313,13 +345,15 @@ Loading game results...
 </div>
 
 
-<!-- PICKS -->
+<!-- ==================================================
+     PLAYER PICKS
+     ================================================== -->
 
 <div class="card">
 
 <h2>Player Picks</h2>
 
-<div class="table-wrapper">
+<div class="player-picks-wrapper">
 
 <div id="liveTable">
 Loading picks...
@@ -335,6 +369,10 @@ Loading picks...
 
 <script>
 
+
+// ==================================================
+// SUPABASE
+// ==================================================
 
 const SUPABASE_URL =
 "https://bgkcnsnydchfghyhwurw.supabase.co";
@@ -448,6 +486,118 @@ spread: team2Spread
 
 
 return null;
+
+}
+
+
+// ==================================================
+// MASCOT / TEAM NAME
+// ==================================================
+
+function getMascotName(team) {
+
+const mascotNames = {
+
+"Arizona Cardinals":
+"Cardinals",
+
+"Atlanta Falcons":
+"Falcons",
+
+"Baltimore Ravens":
+"Ravens",
+
+"Buffalo Bills":
+"Bills",
+
+"Carolina Panthers":
+"Panthers",
+
+"Chicago Bears":
+"Bears",
+
+"Cincinnati Bengals":
+"Bengals",
+
+"Cleveland Browns":
+"Browns",
+
+"Dallas Cowboys":
+"Cowboys",
+
+"Denver Broncos":
+"Broncos",
+
+"Detroit Lions":
+"Lions",
+
+"Green Bay Packers":
+"Packers",
+
+"Houston Texans":
+"Texans",
+
+"Indianapolis Colts":
+"Colts",
+
+"Jacksonville Jaguars":
+"Jaguars",
+
+"Kansas City Chiefs":
+"Chiefs",
+
+"Las Vegas Raiders":
+"Raiders",
+
+"Los Angeles Chargers":
+"Chargers",
+
+"Los Angeles Rams":
+"Rams",
+
+"Miami Dolphins":
+"Dolphins",
+
+"Minnesota Vikings":
+"Vikings",
+
+"New England Patriots":
+"Patriots",
+
+"New Orleans Saints":
+"Saints",
+
+"New York Giants":
+"Giants",
+
+"New York Jets":
+"Jets",
+
+"Philadelphia Eagles":
+"Eagles",
+
+"Pittsburgh Steelers":
+"Steelers",
+
+"San Francisco 49ers":
+"49ers",
+
+"Seattle Seahawks":
+"Seahawks",
+
+"Tampa Bay Buccaneers":
+"Buccaneers",
+
+"Tennessee Titans":
+"Titans",
+
+"Washington Commanders":
+"Commanders"
+
+};
+
+
+return mascotNames[team] || team;
 
 }
 
@@ -567,9 +717,9 @@ homeIcon =
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // FAVORITE
-// --------------------------------------------------
+// ==================================================
 
 const favorite =
 getFavoriteForGame(game);
@@ -608,9 +758,9 @@ ${favorite.spread}
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // ROW
-// --------------------------------------------------
+// ==================================================
 
 html += `
 
@@ -717,17 +867,17 @@ return false;
 }
 
 
-// --------------------------------------------------
+// ==================================================
 // APPLY SPREAD
-// --------------------------------------------------
+// ==================================================
 
 const adjustedScore =
 pickedScore + spread;
 
 
-// --------------------------------------------------
+// ==================================================
 // PUSH COUNTS AS A WIN
-// --------------------------------------------------
+// ==================================================
 
 return adjustedScore >= opponentScore;
 
@@ -1198,7 +1348,6 @@ ${weeklyData[player].points}
 weeklyHtml += `
 
 </tbody>
-
 </table>
 
 `;
@@ -1277,7 +1426,6 @@ ${seasonData[player].wins}
 seasonHtml += `
 
 </tbody>
-
 </table>
 
 `;
@@ -1447,11 +1595,21 @@ className =
 }
 
 
+// ==================================================
+// SHOW MASCOT NAME ONLY
+// ==================================================
+
+const mascot =
+getMascotName(
+pick.team
+);
+
+
 html += `
 
 <td class="pick ${className}">
 
-${pick.team}
+${mascot}
 
 </td>
 
@@ -1508,7 +1666,6 @@ html += `
 html += `
 
 </tbody>
-
 </table>
 
 `;
