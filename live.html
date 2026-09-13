@@ -732,28 +732,34 @@ homeTeam
 );
 
 
-// If both spreads are available,
-// determine who covered.
+// ==================================================
+// AGAINST-THE-SPREAD RESULT
+// USE SAME LOGIC AS PLAYER PICKS
+// ==================================================
 
 if (
 awaySpread !== null &&
 homeSpread !== null
 ) {
 
-const awayAdjustedScore =
-Number(awayScore) +
-awaySpread;
+const awayCovered =
+pickCovered(
+game,
+awayTeam
+);
 
-const homeAdjustedScore =
-Number(homeScore) +
-homeSpread;
+const homeCovered =
+pickCovered(
+game,
+homeTeam
+);
 
 
 // Away team covered
 
 if (
-awayAdjustedScore >
-homeAdjustedScore
+awayCovered &&
+!homeCovered
 ) {
 
 awayClass =
@@ -768,8 +774,8 @@ homeClass =
 // Home team covered
 
 else if (
-homeAdjustedScore >
-awayAdjustedScore
+homeCovered &&
+!awayCovered
 ) {
 
 homeClass =
@@ -781,8 +787,7 @@ awayClass =
 }
 
 
-// Push — both sides get green,
-// matching the pool's push-as-win rule.
+// Push — both sides green
 
 else {
 
