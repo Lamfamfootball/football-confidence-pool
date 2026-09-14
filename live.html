@@ -1,6 +1,4 @@
-```html
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -120,6 +118,9 @@ min-width: 100px;
 .pick {
 min-width: 100px;
 font-weight: bold;
+
+/* BOLDER OUTLINE AROUND EACH PLAYER PICK */
+border: 2px solid #333;
 }
 
 
@@ -236,7 +237,6 @@ margin-left: 5px;
 }
 
 </style>
-
 </head>
 
 <body>
@@ -252,6 +252,7 @@ Watch the pool standings change as games finish
 </header>
 
 <main>
+
 
 <!-- ==================================================
      CONTROLS
@@ -304,6 +305,7 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 
 </div>
 
+
 <!-- ==================================================
      CURRENT WEEK
      ================================================== -->
@@ -316,6 +318,7 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 
 </div>
 
+
 <!-- ==================================================
      SEASON
      ================================================== -->
@@ -327,6 +330,7 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 <div id="seasonStandings"></div>
 
 </div>
+
 
 <!-- ==================================================
      GAME RESULTS
@@ -341,6 +345,7 @@ Loading game results...
 </div>
 
 </div>
+
 
 <!-- ==================================================
      PLAYER PICKS
@@ -361,6 +366,7 @@ Loading picks...
 </div>
 
 </main>
+
 
 <script>
 
@@ -704,6 +710,7 @@ awayIcon =
 " 🏆";
 
 }
+
 else if (
 Number(homeScore) >
 Number(awayScore)
@@ -717,6 +724,7 @@ homeIcon =
 
 // ==================================================
 // AGAINST-THE-SPREAD RESULT
+// USE SAME LOGIC AS PLAYER PICKS
 // ==================================================
 
 const awaySpread =
@@ -731,11 +739,6 @@ game.spread,
 homeTeam
 );
 
-
-// ==================================================
-// AGAINST-THE-SPREAD RESULT
-// USE SAME LOGIC AS PLAYER PICKS
-// ==================================================
 
 if (
 awaySpread !== null &&
@@ -820,6 +823,7 @@ homeClass =
 "game-loser";
 
 }
+
 else if (
 Number(homeScore) >
 Number(awayScore)
@@ -832,6 +836,7 @@ awayClass =
 "game-loser";
 
 }
+
 else {
 
 awayClass =
@@ -972,6 +977,7 @@ homeTeam === game.team1
 ? game.team2
 : game.team1;
 
+
 const pickedScore =
 pickedTeam === homeTeam
 ? homeScore
@@ -981,6 +987,7 @@ const opponentScore =
 pickedTeam === homeTeam
 ? awayScore
 : homeScore;
+
 
 const spread =
 parseSpreadForTeam(
@@ -1054,6 +1061,7 @@ await supabaseClient
 selectedWeek
 );
 
+
 if (gamesError) {
 
 console.error(
@@ -1081,6 +1089,7 @@ await supabaseClient
 .select(
 "player-name,game_id,team-picked,confidence,week"
 );
+
 
 if (picksError) {
 
@@ -1160,6 +1169,7 @@ await supabaseClient
 "week",
 selectedWeek
 );
+
 
 if (updatedGamesError) {
 
@@ -1322,6 +1332,7 @@ await supabaseClient
 .select(
 "id,week,team1,team2,home_team,spread,home_score,away_score"
 );
+
 
 if (seasonGamesError) {
 
@@ -1743,7 +1754,6 @@ ${mascot}
 
 });
 
-
 html += `
 
 </tr>
@@ -1792,6 +1802,7 @@ html += `
 html += `
 
 </tbody>
+
 </table>
 
 `;
@@ -1830,4 +1841,3 @@ loadLivePicks,
 
 </body>
 </html>
-```
