@@ -141,8 +141,14 @@ font-weight: bold;
 }
 
 /* ==============================
-   SPREAD ROW
+   NEW SIMPLE SPREAD ENTRY
    ============================== */
+
+.spread-label {
+font-weight: bold;
+margin-top: 12px;
+display: block;
+}
 
 .spread-row {
 display: flex;
@@ -151,27 +157,27 @@ gap: 12px;
 margin: 8px 0;
 }
 
-.spread-team {
+.spread-favorite {
 flex: 1;
 min-width: 0;
-font-weight: bold;
-white-space: normal;
-overflow-wrap: break-word;
-word-break: normal;
 }
 
-.spread-input {
-width: 100px;
-min-width: 100px;
+.spread-number {
+width: 120px;
+min-width: 120px;
 margin: 0;
 text-align: center;
 font-weight: bold;
-box-sizing: border-box;
 }
 
-/* ==============================
-   SCORE ROW
-   ============================== */
+.spread-preview {
+background: #e5f5ff;
+border: 1px solid #c1e5f5;
+padding: 10px;
+border-radius: 7px;
+margin-top: 10px;
+font-weight: bold;
+}
 
 .score-row {
 display: flex;
@@ -342,8 +348,8 @@ function parseSpread(spread, team1, team2) {
 if (!spread) {
 
 return {
-team1: "",
-team2: ""
+favorite: "",
+spread: ""
 };
 
 }
@@ -379,71 +385,194 @@ part.substring(team2.length).trim();
 
 });
 
+let favorite = "";
+let favoriteSpread = "";
+
+if (
+team1Spread.startsWith("-")
+) {
+
+favorite = team1;
+favoriteSpread = team1Spread;
+
+}
+else if (
+team2Spread.startsWith("-")
+) {
+
+favorite = team2;
+favoriteSpread = team2Spread;
+
+}
+
 return {
-team1: team1Spread,
-team2: team2Spread
+favorite: favorite,
+spread: favoriteSpread
 };
 
 }
 
 
 // ==================================================
-// FORMAT SPREAD
+// CREATE FULL SPREAD
 // ==================================================
 
-function formatSpread(
+function formatFavoriteSpread(
 team1,
-team1Spread,
 team2,
-team2Spread
+favorite,
+spread
 ) {
 
-team1Spread =
-team1Spread.trim();
+spread = spread.trim();
 
-team2Spread =
-team2Spread.trim();
+if (!favorite || !spread) {
+return "";
+}
+
+
+// Make sure entered spread is negative.
+
+let number =
+parseFloat(
+spread.replace("+", "")
+);
 
 if (
-team1Spread &&
-!team1Spread.startsWith("+") &&
-!team1Spread.startsWith("-")
+Number.isNaN(number) ||
+number >= 0
 ) {
 
-team1Spread =
-"+" + team1Spread;
+return "";
+}
+
+let favoriteSpread =
+number.toString();
+
+let underdogSpread =
+(-number).toString();
+
+if (
+favorite === team1
+) {
+
+return (
+team1 +
+" " +
+favoriteSpread +
+" / " +
+team2 +
+" +" +
+Math.abs(number)
+);
 
 }
 
 if (
-team2Spread &&
-!team2Spread.startsWith("+") &&
-!team2Spread.startsWith("-")
+favorite === team2
 ) {
 
-team2Spread =
-"+" + team2Spread;
+return (
+team1 +
+" +" +
+Math.abs(number) +
+" / " +
+team2 +
+" " +
+favoriteSpread
+);
 
 }
-
-if (
-!team1Spread &&
-!team2Spread
-) {
 
 return "";
 
 }
 
-return (
-team1 +
-" " +
-team1Spread +
-" / " +
-team2 +
-" " +
-team2Spread
+
+// ==================================================
+// UPDATE SPREAD PREVIEW
+// ==================================================
+
+function updateSpreadPreview(gameId) {
+
+const favoriteInput =
+document.getElementById(
+"favorite-" + gameId
 );
+
+const spreadInput =
+document.getElementById(
+"spread-" + gameId
+);
+
+const preview =
+document.getElementById(
+"preview-" + gameId
+);
+
+if (
+!favoriteInput ||
+!spreadInput ||
+!preview
+) {
+return;
+}
+
+const favorite =
+favoriteInput.value;
+
+const spread =
+spreadInput.value.trim();
+
+if (
+!favorite ||
+!spread
+) {
+
+preview.innerText =
+"Enter the favored team and spread.";
+
+return;
+
+}
+
+let number =
+parseFloat(
+spread.replace("+", "")
+);
+
+if (
+Number.isNaN(number) ||
+number >= 0
+) {
+
+preview.innerText =
+"Enter the favorite's spread as a negative number, such as -3.5.";
+
+return;
+
+}
+
+const game =
+loadedGames.find(
+g => String(g.id) === String(gameId)
+);
+
+if (!game) {
+return;
+}
+
+const fullSpread =
+formatFavoriteSpread(
+game.team1,
+game.team2,
+favorite,
+spread
+);
+
+preview.innerText =
+"Saved as: " +
+fullSpread;
 
 }
 
@@ -590,36 +719,80 @@ ${game.home_team || game.team2}
 ${gameTime}
 </div>
 
-<div class="spread-row">
+<label class="spread-label">
+Favored Team
+</label>
 
-<div class="spread-team">
+<select
+id="favorite-${game.id}"
+onchange="updateSpreadPreview(${game.id})"
+>
+
+<option value="">
+-- Select Favored Team --
+</option>
+
+<option
+value="${game.team1}"
+${
+parsed.favorite === game.team1
+?
+"selected"
+:
+""
+}
+>
 ${game.team1}
-</div>
+</option>
 
-<input
-class="spread-input"
-type="text"
-id="spread1-${game.id}"
-value="${parsed.team1}"
-placeholder="+3.5"
+<option
+value="${game.team2}"
+${
+parsed.favorite === game.team2
+?
+"selected"
+:
+""
+}
 >
+${game.team2}
+</option>
 
-</div>
+</select>
+
+<label class="spread-label">
+Favorite's Point Spread
+</label>
 
 <div class="spread-row">
 
-<div class="spread-team">
-🏠 ${game.team2}
+<div class="spread-favorite">
+Enter the favorite's spread
 </div>
 
 <input
-class="spread-input"
+class="spread-number"
 type="text"
-id="spread2-${game.id}"
-value="${parsed.team2}"
+id="spread-${game.id}"
+value="${parsed.spread}"
 placeholder="-3.5"
+oninput="updateSpreadPreview(${game.id})"
 >
 
+</div>
+
+<div
+class="spread-preview"
+id="preview-${game.id}"
+>
+${
+parsed.favorite && parsed.spread
+?
+"Saved as: " +
+game.spread
+:
+"Enter the favored team and spread."
+}
 </div>
 
 `;
@@ -633,7 +806,7 @@ gameDiv
 message.innerText =
 "Week " +
 week +
-" loaded. Enter or review the spreads, then click Save Week.";
+" loaded. Select the favored team and enter its negative spread for each game, then click Save Week.";
 
 }
 
@@ -692,31 +865,103 @@ for (
 const game of loadedGames
 ) {
 
-const spread1Input =
+const favoriteInput =
 document.getElementById(
-"spread1-" + game.id
+"favorite-" + game.id
 );
 
-const spread2Input =
+const spreadInput =
 document.getElementById(
-"spread2-" + game.id
+"spread-" + game.id
 );
+
+if (
+!favoriteInput ||
+!spreadInput
+) {
+
+continue;
+
+}
+
+const favorite =
+favoriteInput.value;
+
+const enteredSpread =
+spreadInput.value.trim();
+
+
+// Skip completely blank spreads.
+
+if (
+!favorite &&
+!enteredSpread
+) {
+
+continue;
+
+}
+
+if (
+!favorite
+) {
+
+throw new Error(
+"Please select the favored team for " +
+game.team1 +
+" @ " +
+game.team2
+);
+
+}
+
+if (
+!enteredSpread
+) {
+
+throw new Error(
+"Please enter the spread for " +
+favorite
+);
+
+}
+
+const number =
+parseFloat(
+enteredSpread.replace("+", "")
+);
+
+if (
+Number.isNaN(number) ||
+number >= 0
+) {
+
+throw new Error(
+"Spread for " +
+favorite +
+" must be negative, such as -3.5"
+);
+
+}
 
 const spread =
-formatSpread(
+formatFavoriteSpread(
 game.team1,
-spread1Input
-?
-spread1Input.value
-:
-"",
 game.team2,
-spread2Input
-?
-spread2Input.value
-:
-""
+favorite,
+enteredSpread
 );
+
+if (!spread) {
+
+throw new Error(
+"Could not create spread for " +
+game.team1 +
+" @ " +
+game.team2
+);
+
+}
 
 const {
 error
@@ -999,9 +1244,6 @@ error.message;
 // ==================================================
 // SAVE RESULTS
 // ==================================================
-//
-// Entering the scores automatically determines winner.
-// ==================================================
 
 async function saveResults() {
 
@@ -1076,9 +1318,6 @@ awayInput.value.trim();
 const homeScore =
 homeInput.value.trim();
 
-
-// Don't save incomplete games.
-
 if (
 awayScore === "" ||
 homeScore === ""
@@ -1109,9 +1348,6 @@ gameId
 );
 
 }
-
-
-// Ties are left without a winner.
 
 let winner = null;
 
@@ -1171,11 +1407,6 @@ game.team2;
 
 }
 
-
-// ==================================================
-// SAVE SCORES + WINNER
-// ==================================================
-
 const {
 error
 } =
@@ -1205,7 +1436,6 @@ throw error;
 savedCount++;
 
 }
-
 
 message.innerText =
 "✅ Results saved! " +
@@ -1245,5 +1475,3 @@ error.message;
 </body>
 </html>
 ```
-
-This version keeps **Games 1–17 looking the same** while allowing longer names in **Week 2 Games 18–20** to wrap instead of being clipped.
