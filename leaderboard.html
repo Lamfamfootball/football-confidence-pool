@@ -248,6 +248,50 @@ function normalizeTeam(team) {
 
 
 // ==================================================
+// DETERMINE IF GAME IS ACTUALLY COMPLETED
+//
+// A game is NOT considered completed simply because
+// home_score and away_score contain numbers.
+//
+// The Winner field must contain an actual result.
+//
+// This prevents future games with 0-0 scores from
+// being counted as wins.
+// ==================================================
+
+function isGameCompleted(game) {
+
+    if (!game) {
+        return false;
+    }
+
+    const winner =
+        game.Winner;
+
+    if (
+        winner === null ||
+        winner === undefined
+    ) {
+        return false;
+    }
+
+    const winnerText =
+        String(winner).trim();
+
+    if (
+        winnerText === "" ||
+        winnerText.toLowerCase() === "null" ||
+        winnerText.toLowerCase() === "tbd"
+    ) {
+        return false;
+    }
+
+    return true;
+
+}
+
+
+// ==================================================
 // GET SPREAD FOR A TEAM
 //
 // Expected format:
@@ -313,14 +357,9 @@ function getTeamSpread(spread, team) {
 //
 // Push counts as a win.
 //
-// If the picked team is:
-//
-// -3.5 and wins by 4 = WIN
-// -3.5 and wins by 3 = LOSS
-// +3.5 and loses by 3 = WIN
-// +3.5 and loses by 4 = LOSS
-//
-// A push is also counted as a WIN.
+// IMPORTANT:
+// A game MUST be completed before this function
+// can return a win.
 // ==================================================
 
 function pickIsWin(pick, game) {
@@ -328,6 +367,18 @@ function pickIsWin(pick, game) {
     if (!pick || !game) {
         return false;
     }
+
+
+    // ------------------------------------------------
+    // DO NOT COUNT UNFINISHED GAMES
+    // ------------------------------------------------
+
+    if (!isGameCompleted(game)) {
+
+        return false;
+
+    }
+
 
     const pickedTeam =
         pick["team-picked"];
@@ -339,6 +390,7 @@ function pickIsWin(pick, game) {
         );
 
     if (spread === null) {
+
         console.warn(
             "Could not determine spread for:",
             pickedTeam,
@@ -346,7 +398,9 @@ function pickIsWin(pick, game) {
         );
 
         return false;
+
     }
+
 
     const homeScore =
         Number(game.home_score);
@@ -363,6 +417,7 @@ function pickIsWin(pick, game) {
 
     }
 
+
     let pickedScore;
     let opponentScore;
 
@@ -374,6 +429,7 @@ function pickIsWin(pick, game) {
 
     const team2 =
         normalizeTeam(game.team2);
+
 
     /*
        team1 is the AWAY team.
@@ -403,9 +459,12 @@ function pickIsWin(pick, game) {
 
     }
 
+
     // ATS margin
+
     const atsResult =
         (pickedScore - opponentScore) + spread;
+
 
     /*
        Positive = covers
@@ -438,6 +497,7 @@ async function loadLeaderboard() {
 
     const leaderboard =
         document.getElementById("leaderboard");
+
 
     status.className = "";
 
@@ -584,6 +644,8 @@ async function loadLeaderboard() {
 
 
         // USE ATS RESULT
+        // Unfinished games automatically return false.
+
         if (
             pickIsWin(
                 pick,
@@ -849,7 +911,8 @@ async function loadSeasonLeaderboard() {
         }
 
 
-        // USE SAME ATS LOGIC
+        // ONLY COMPLETED GAMES COUNT
+
         if (
             pickIsWin(
                 pick,
@@ -1077,6 +1140,16 @@ async function loadWeeklyWinners() {
         }
 
 
+        // ------------------------------------------------
+        // IMPORTANT:
+        // Ignore unfinished games completely.
+        // ------------------------------------------------
+
+        if (!isGameCompleted(game)) {
+            return;
+        }
+
+
         const week =
             game.week;
 
@@ -1096,6 +1169,7 @@ async function loadWeeklyWinners() {
 
 
         // SAME ATS LOGIC
+
         if (
             pickIsWin(
                 pick,
@@ -1115,22 +1189,7 @@ async function loadWeeklyWinners() {
     // CREATE TABLE
     // ==================================================
 
-    let html = `
-
-<table>
-
-<thead>
-
-<tr>
-<th>Week</th>
-<th>Winner</th>
-<th>Confidence Points</th>
-</tr>
-
-</thead>
-
-<tbody>
-`;
+    let rows = "";
 
 
     for (
@@ -1139,6 +1198,8 @@ async function loadWeeklyWinners() {
         week++
     ) {
 
+
+        // No completed games for this week
 
         if (!weekly[week]) {
             continue;
@@ -1182,7 +1243,7 @@ async function loadWeeklyWinners() {
             );
 
 
-        html += `
+        rows += `
 
 <tr>
 
@@ -1204,29 +1265,42 @@ ${highest}
     }
 
 
-    html += `
+    // ==================================================
+    // DISPLAY
+    // ==================================================
+
+    if (rows === "") {
+
+        container.innerHTML =
+            "<p>No weekly winners yet.</p>";
+
+        return;
+
+    }
+
+
+    container.innerHTML = `
+
+<table>
+
+<thead>
+
+<tr>
+<th>Week</th>
+<th>Winner</th>
+<th>Confidence Points</th>
+</tr>
+
+</thead>
+
+<tbody>
+
+${rows}
 
 </tbody>
 
 </table>
 `;
-
-
-    if (
-        html.includes(
-            "<tbody>\n</tbody>"
-        )
-    ) {
-
-        container.innerHTML =
-            "<p>No weekly winners yet.</p>";
-
-    } else {
-
-        container.innerHTML =
-            html;
-
-    }
 
 }
 
