@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -107,6 +108,9 @@ color: #17618a;
 font-size: 18px;
 font-weight: bold;
 margin: 8px 0 15px;
+white-space: normal;
+overflow-wrap: break-word;
+word-break: normal;
 }
 
 .home-team {
@@ -136,6 +140,10 @@ color: #246b94;
 font-weight: bold;
 }
 
+/* ==============================
+   SPREAD ROW
+   ============================== */
+
 .spread-row {
 display: flex;
 align-items: center;
@@ -145,15 +153,25 @@ margin: 8px 0;
 
 .spread-team {
 flex: 1;
+min-width: 0;
 font-weight: bold;
+white-space: normal;
+overflow-wrap: break-word;
+word-break: normal;
 }
 
 .spread-input {
 width: 100px;
+min-width: 100px;
 margin: 0;
 text-align: center;
 font-weight: bold;
+box-sizing: border-box;
 }
+
+/* ==============================
+   SCORE ROW
+   ============================== */
 
 .score-row {
 display: flex;
@@ -164,15 +182,21 @@ margin: 10px 0;
 
 .score-team {
 flex: 1;
+min-width: 0;
 font-weight: bold;
+white-space: normal;
+overflow-wrap: break-word;
+word-break: normal;
 }
 
 .score-input {
 width: 90px;
+min-width: 90px;
 margin: 0;
 text-align: center;
 font-weight: bold;
 font-size: 18px;
+box-sizing: border-box;
 }
 
 .result-winner {
@@ -1220,3 +1244,6 @@ error.message;
 
 </body>
 </html>
+```
+
+This version keeps **Games 1–17 looking the same** while allowing longer names in **Week 2 Games 18–20** to wrap instead of being clipped.
