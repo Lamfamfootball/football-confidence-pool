@@ -389,6 +389,180 @@ SUPABASE_KEY
 
 
 // ==================================================
+// COMPLETED WEEK CHECK
+// ==================================================
+
+function isGameCompleted(game) {
+
+if (!game) {
+return false;
+}
+
+const winner = game.Winner;
+
+if (
+winner === null ||
+winner === undefined
+) {
+return false;
+}
+
+const winnerText =
+String(winner).trim();
+
+if (
+winnerText === "" ||
+winnerText.toLowerCase() === "null" ||
+winnerText.toLowerCase() === "tbd"
+) {
+return false;
+}
+
+return true;
+
+}
+
+
+// ==================================================
+// UPDATE WEEK DROPDOWN
+//
+// Completed weeks are crossed out but remain
+// selectable.
+// ==================================================
+
+async function updateWeekDropdown() {
+
+const select =
+document.getElementById("weekSelect");
+
+if (!select) {
+return;
+}
+
+
+// Remember currently selected week.
+
+const selectedWeek =
+select.value;
+
+
+// Get Winner status for all games.
+
+const {
+data: games,
+error
+} =
+await supabaseClient
+.from("games")
+.select("week,Winner")
+.gte("week", 1)
+.lte("week", 18);
+
+
+if (error) {
+
+console.error(
+"Error checking completed weeks:",
+error
+);
+
+return;
+
+}
+
+
+// Rebuild dropdown.
+
+select.innerHTML = "";
+
+
+for (
+let week = 1;
+week <= 18;
+week++
+) {
+
+const weekGames =
+(games || []).filter(
+game =>
+Number(game.week) === week
+);
+
+
+// A week is complete when:
+// - it has games
+// - every game has a Winner
+
+const completed =
+weekGames.length > 0 &&
+weekGames.every(
+game =>
+isGameCompleted(game)
+);
+
+
+const option =
+document.createElement("option");
+
+option.value =
+week;
+
+
+// Completed weeks are crossed out.
+// They are NOT disabled.
+
+if (completed) {
+
+option.textContent =
+"Week " +
+week;
+
+option.style.textDecoration =
+"line-through";
+
+}
+else {
+
+option.textContent =
+"Week " +
+week;
+
+}
+
+
+select.appendChild(option);
+
+}
+
+
+// Restore selected week.
+
+const stillExists =
+Array.from(
+select.options
+).some(
+option =>
+option.value === selectedWeek
+);
+
+
+if (stillExists) {
+
+select.value =
+selectedWeek;
+
+}
+else {
+
+select.value =
+"1";
+
+}
+
+}
+
+
+// ==================================================
 // PARSE SPREAD
 // ==================================================
 
@@ -590,7 +764,7 @@ const mascotNames = {
 "Buccaneers",
 
 "Tennessee Titans":
-"Titans",
+"Titan­s",
 
 "Washington Commanders":
 "Commanders"
@@ -1825,6 +1999,8 @@ new Date().toLocaleTimeString();
 // INITIAL LOAD
 // ==================================================
 
+updateWeekDropdown();
+
 loadLivePicks();
 
 
@@ -1835,6 +2011,16 @@ loadLivePicks();
 setInterval(
 loadLivePicks,
 300000
+);
+
+
+// ==================================================
+// UPDATE WEEK DROPDOWN EVERY 60 SECONDS
+// ==================================================
+
+setInterval(
+updateWeekDropdown,
+60000
 );
 
 </script>
