@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-
 <html lang="en">
+
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -41,14 +41,6 @@ padding: 20px;
 margin-bottom: 20px;
 border-radius: 10px;
 box-shadow: 0 3px 10px rgba(0,0,0,0.06);
-}
-
-.game {
-background: #ffffff;
-padding: 15px;
-margin-bottom: 12px;
-border-radius: 8px;
-border: 1px solid #d6e4ef;
 }
 
 select,
@@ -370,6 +362,7 @@ padding: 8px 2px;
 
 <h2 class="make-picks-title">🏈 Make Your Picks</h2>
 
+
 <!-- ==================================================
 PLAYER VERIFICATION
 ================================================== -->
@@ -385,7 +378,6 @@ type="text"
 id="playerName"
 placeholder="Enter your name"
 autocomplete="name"
-
 >
 
 <label>
@@ -398,23 +390,22 @@ id="playerPin"
 placeholder="Enter your 2-digit PIN"
 inputmode="numeric"
 maxlength="2"
-
 >
 
 <button
 type="button"
 class="verify-button"
 onclick="verifyPlayer()"
-
 >
-
-Verify Player </button>
+Verify Player
+</button>
 
 <p id="playerStatus">
 Enter your name and PIN.
 </p>
 
 </div>
+
 
 <!-- ==================================================
 WEEK SELECTOR
@@ -453,12 +444,12 @@ WEEK SELECTOR
 type="button"
 class="load-button"
 onclick="loadSelectedWeek()"
-
 >
-
-Load Week </button>
+Load Week
+</button>
 
 </div>
+
 
 <h2 id="weekTitle">
 Week 1
@@ -469,19 +460,23 @@ Choose exactly <strong>10 games</strong> and assign
 confidence points <strong>1–10</strong>.
 </p>
 
+
 <!-- ==================================================
 SUMMARY
 ================================================== -->
 
 <div class="summary">
 
-<strong>Selected games:</strong> <span id="selectedCount">0</span> / 10
+<strong>Selected games:</strong>
+<span id="selectedCount">0</span> / 10
 
 <br>
 
-<strong>Confidence points assigned:</strong> <span id="pointsUsed">0</span> / 10
+<strong>Confidence points assigned:</strong>
+<span id="pointsUsed">0</span> / 10
 
 </div>
+
 
 <!-- ==================================================
 DEADLINE
@@ -498,11 +493,13 @@ class="deadline-open"
 Please verify your player first.
 </p>
 
+
 <!-- ==================================================
 GAME LIST
 ================================================== -->
 
 <div id="gameList"></div>
+
 
 <!-- ==================================================
 SUBMIT
@@ -513,16 +510,16 @@ type="button"
 id="submitButton"
 onclick="submitPicks()"
 disabled
-
 >
-
-Submit Picks </button>
+Submit Picks
+</button>
 
 <p id="submitMessage"></p>
 
 </div>
 
 </main>
+
 
 <script>
 
@@ -583,17 +580,191 @@ const deadlines = {
 
 };
 
-return new Date(
-deadlines[week]
-);
+return new Date(deadlines[week]);
 
 }
 
 
 function picksAreClosed(week) {
 
-return new Date() >
-getPickDeadline(week);
+return new Date() > getPickDeadline(week);
+
+}
+
+
+// ==================================================
+// COMPLETED WEEK CHECK
+// ==================================================
+
+function isGameCompleted(game) {
+
+if (!game) {
+return false;
+}
+
+const winner = game.Winner;
+
+if (
+winner === null ||
+winner === undefined
+) {
+return false;
+}
+
+const winnerText =
+String(winner).trim();
+
+if (
+winnerText === "" ||
+winnerText.toLowerCase() === "null" ||
+winnerText.toLowerCase() === "tbd"
+) {
+return false;
+}
+
+return true;
+
+}
+
+
+// ==================================================
+// CROSS OUT COMPLETED WEEKS
+//
+// A completed week remains selectable.
+// ==================================================
+
+async function updateWeekDropdown() {
+
+const select =
+document.getElementById("weekSelect");
+
+if (!select) {
+return;
+}
+
+
+// Remember whichever week the player currently has selected.
+
+const selectedWeek =
+select.value;
+
+
+// Get all games and their completion status.
+
+const {
+data: games,
+error
+} =
+await supabaseClient
+.from("games")
+.select("week,Winner")
+.gte("week", 1)
+.lte("week", 18);
+
+
+if (error) {
+
+console.error(
+"Error checking completed weeks:",
+error
+);
+
+return;
+
+}
+
+
+// Rebuild the dropdown.
+
+select.innerHTML = "";
+
+
+for (
+let week = 1;
+week <= 18;
+week++
+) {
+
+const weekGames =
+(games || []).filter(
+game =>
+Number(game.week) === week
+);
+
+
+// A week is completed only when:
+//
+// 1. It has at least one game
+// 2. Every game has a valid Winner
+
+const completed =
+weekGames.length > 0 &&
+weekGames.every(
+game =>
+isGameCompleted(game)
+);
+
+
+const option =
+document.createElement("option");
+
+option.value =
+week;
+
+
+// Use Unicode combining strikethrough characters.
+// This works inside normal HTML select elements
+// and keeps the option selectable.
+
+if (completed) {
+
+option.textContent =
+"Week " +
+week +
+" ✓";
+
+option.style.textDecoration =
+"line-through";
+
+}
+else {
+
+option.textContent =
+"Week " +
+week;
+
+}
+
+
+// Add the option.
+
+select.appendChild(option);
+
+}
+
+
+// Restore the week the player was viewing.
+
+const optionStillExists =
+Array.from(
+select.options
+).some(
+option =>
+option.value === selectedWeek
+);
+
+
+if (optionStillExists) {
+
+select.value =
+selectedWeek;
+
+}
+else {
+
+select.value = "1";
+
+}
 
 }
 
@@ -620,7 +791,6 @@ deadlineMessage.className =
 "deadline-closed";
 
 }
-
 else {
 
 deadlineMessage.innerText =
@@ -895,8 +1065,6 @@ team2.length
 });
 
 
-// The negative spread identifies the favorite.
-
 if (
 team1Spread.startsWith("-")
 ) {
@@ -1062,8 +1230,6 @@ game.team2
 game.team1;
 
 
-// Find which team is the favorite.
-
 const favorite =
 getFavoriteSpread(
 game.spread,
@@ -1092,9 +1258,6 @@ div.innerHTML = `
 
 <div class="game-grid">
 
-
-<!-- CONFIDENCE -->
-
 <div class="confidence-column">
 
 <select
@@ -1122,8 +1285,6 @@ Points
 </div>
 
 
-<!-- HOME TEAM -->
-
 <div class="team-column">
 
 <button
@@ -1134,9 +1295,7 @@ data-game-id="${game.id}"
 >
 
 <div class="team-name">
-
 🏠 ${homeTeam}
-
 </div>
 
 ${
@@ -1154,8 +1313,6 @@ ${homeSpread}
 </div>
 
 
-<!-- VISITOR -->
-
 <div class="team-column">
 
 <button
@@ -1166,9 +1323,7 @@ data-game-id="${game.id}"
 >
 
 <div class="team-name">
-
 ✈️ ${awayTeam}
-
 </div>
 
 ${
@@ -1185,8 +1340,6 @@ ${awaySpread}
 
 </div>
 
-
-<!-- HIDDEN PICK VALUE -->
 
 <select
 class="pick-team hidden-pick"
@@ -1208,8 +1361,8 @@ ${homeTeam}
 
 </select>
 
-
 </div>
+
 
 <div class="game-time">
 
@@ -1268,13 +1421,9 @@ gameCard.querySelector(
 );
 
 
-// Select the clicked team.
-
 pickSelect.value =
 selectedTeam;
 
-
-// Remove highlight from both teams.
 
 gameCard
 .querySelectorAll(
@@ -1289,8 +1438,6 @@ teamButton.classList.remove(
 
 });
 
-
-// Highlight selected team.
 
 button.classList.add(
 "selected"
@@ -1330,8 +1477,6 @@ updateConfidenceOptions();
 });
 
 
-// Initial confidence update.
-
 updateConfidenceOptions();
 
 
@@ -1355,14 +1500,6 @@ game.game_time
 
 
 if (gameStarted) {
-
-const gameCard =
-document.querySelectorAll(
-".game"
-)[index];
-
-
-// index is offset by the header.
 
 const actualGameCard =
 document.querySelectorAll(
@@ -1930,7 +2067,23 @@ submitButton.innerText =
 // START
 // ==================================================
 
+// Update the dropdown immediately.
+
+updateWeekDropdown();
+
 updateDeadlineMessage();
+
+
+// Refresh completed-week status every 60 seconds.
+
+setInterval(
+() => {
+
+updateWeekDropdown();
+
+},
+60000
+);
 
 </script>
 
