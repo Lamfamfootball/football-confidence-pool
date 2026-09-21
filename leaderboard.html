@@ -112,55 +112,6 @@ th:first-child {
     font-size: 18px;
 }
 
-
-/* ==================================================
-   WEEK BUTTONS
-   ================================================== */
-
-.week-buttons {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px;
-    margin: 8px 0 15px;
-}
-
-.week-button {
-    padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    background: white;
-    color: #111827;
-    cursor: pointer;
-    font-size: 15px;
-    width: 100%;
-}
-
-.week-button:hover {
-    background: #f3f4f6;
-}
-
-.week-button.completed {
-    text-decoration: line-through;
-    opacity: 0.65;
-}
-
-.week-button.selected {
-    background: #2563eb;
-    color: white;
-    border-color: #2563eb;
-}
-
-
-/* Mobile */
-
-@media (max-width: 500px) {
-
-    .week-buttons {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-}
-
 </style>
 
 </head>
@@ -187,19 +138,50 @@ th:first-child {
 
 <h2>Weekly Standings</h2>
 
+<select id="weekSelect">
 
-<!-- Week buttons are created automatically -->
+<option value="1">Week 1</option>
 
-<div id="weekButtons"></div>
+<option value="2">Week 2</option>
+
+<option value="3">Week 3</option>
+
+<option value="4">Week 4</option>
+
+<option value="5">Week 5</option>
+
+<option value="6">Week 6</option>
+
+<option value="7">Week 7</option>
+
+<option value="8">Week 8</option>
+
+<option value="9">Week 9</option>
+
+<option value="10">Week 10</option>
+
+<option value="11">Week 11</option>
+
+<option value="12">Week 12</option>
+
+<option value="13">Week 13</option>
+
+<option value="14">Week 14</option>
+
+<option value="15">Week 15</option>
+
+<option value="16">Week 16</option>
+
+<option value="17">Week 17</option>
+
+<option value="18">Week 18</option>
+
+</select>
 
 
-<!-- Hidden value used by the existing leaderboard code -->
-
-<input
-    type="hidden"
-    id="weekSelect"
-    value="1"
->
+<button type="button" onclick="loadLeaderboard()">
+Load Week
+</button>
 
 
 <p id="status">Loading...</p>
@@ -285,14 +267,6 @@ function normalizeTeam(team) {
 
 // ==================================================
 // DETERMINE IF GAME IS ACTUALLY COMPLETED
-//
-// A game is NOT considered completed simply because
-// home_score and away_score contain numbers.
-//
-// The Winner field must contain an actual result.
-//
-// This prevents future games with 0-0 scores from
-// being counted as wins.
 // ==================================================
 
 function isGameCompleted(game) {
@@ -329,14 +303,6 @@ function isGameCompleted(game) {
 
 // ==================================================
 // GET SPREAD FOR A TEAM
-//
-// Expected format:
-//
-// team1 -3.5 / team2 +3.5
-//
-// or
-//
-// team1 +3.5 / team2 -3.5
 // ==================================================
 
 function getTeamSpread(spread, team) {
@@ -391,12 +357,6 @@ function getTeamSpread(spread, team) {
 
 // ==================================================
 // DETERMINE IF PICK WON ATS
-//
-// Push counts as a win.
-//
-// IMPORTANT:
-// A game MUST be completed before this function
-// can return a win.
 // ==================================================
 
 function pickIsWin(pick, game) {
@@ -405,17 +365,9 @@ function pickIsWin(pick, game) {
         return false;
     }
 
-
-    // ------------------------------------------------
-    // DO NOT COUNT UNFINISHED GAMES
-    // ------------------------------------------------
-
     if (!isGameCompleted(game)) {
-
         return false;
-
     }
-
 
     const pickedTeam =
         pick["team-picked"];
@@ -438,7 +390,6 @@ function pickIsWin(pick, game) {
 
     }
 
-
     const homeScore =
         Number(game.home_score);
 
@@ -453,7 +404,6 @@ function pickIsWin(pick, game) {
         return false;
 
     }
-
 
     let pickedScore;
     let opponentScore;
@@ -497,8 +447,6 @@ function pickIsWin(pick, game) {
     }
 
 
-    // ATS margin
-
     const atsResult =
         (pickedScore - opponentScore) + spread;
 
@@ -517,26 +465,38 @@ function pickIsWin(pick, game) {
 
 
 // ==================================================
-// CREATE WEEK BUTTONS
+// UPDATE WEEK DROPDOWN
 //
-// Completed weeks are crossed out automatically.
-// They remain clickable.
+// Completed weeks display:
+//
+// Week 1 ✓
+//
+// They remain selectable.
 // ==================================================
 
-async function loadWeekButtons() {
+async function updateWeekDropdown() {
 
-    const container =
-        document.getElementById("weekButtons");
+    const select =
+        document.getElementById("weekSelect");
+
+    const currentWeek =
+        select.value;
+
 
     const {
         data: games,
         error
     } =
         await supabaseClient
-            .from("games")
-            .select("week,Winner")
-            .gte("week", 1)
-            .lte("week", 18);
+
+        .from("games")
+
+        .select("week,Winner")
+
+        .gte("week", 1)
+
+        .lte("week", 18);
+
 
     if (error) {
 
@@ -549,7 +509,8 @@ async function loadWeekButtons() {
 
     }
 
-    container.innerHTML = "";
+
+    select.innerHTML = "";
 
 
     for (
@@ -566,10 +527,8 @@ async function loadWeekButtons() {
 
 
         /*
-           A week is completed only when:
-
-           1. It has games
-           2. EVERY game has a valid Winner
+           A week is complete only when
+           every game has a valid Winner.
         */
 
         const completed =
@@ -580,67 +539,42 @@ async function loadWeekButtons() {
             );
 
 
-        const button =
-            document.createElement("button");
-
-        button.type = "button";
-
-        button.className =
-            "week-button" +
-            (
-                completed
-                    ? " completed"
-                    : ""
-            );
+        const option =
+            document.createElement("option");
 
 
-        button.innerText =
-            "Week " + week;
+        option.value =
+            week;
 
 
-        button.onclick = () => {
-
-            document
-                .getElementById("weekSelect")
-                .value = week;
-
-
-            document
-                .querySelectorAll(".week-button")
-                .forEach(btn =>
-                    btn.classList.remove(
-                        "selected"
-                    )
-                );
+        option.textContent =
+            completed
+                ? "Week " + week + " ✓"
+                : "Week " + week;
 
 
-            button.classList.add(
-                "selected"
-            );
-
-
-            loadLeaderboard();
-
-        };
-
-
-        container.appendChild(button);
+        select.appendChild(option);
 
     }
 
 
-    // Select Week 1 initially
+    /*
+       Keep the week the user was viewing.
+    */
 
-    const firstButton =
-        container.querySelector(
-            ".week-button"
-        );
+    if (
+        currentWeek &&
+        document.querySelector(
+            `#weekSelect option[value="${currentWeek}"]`
+        )
+    ) {
 
-    if (firstButton) {
+        select.value =
+            currentWeek;
 
-        firstButton.classList.add(
-            "selected"
-        );
+    } else {
+
+        select.value = "1";
 
     }
 
@@ -750,6 +684,13 @@ async function loadLeaderboard() {
         picks.length === 0
     ) {
 
+        document.getElementById(
+            "leaderboardTitle"
+        ).innerText =
+            "Week " +
+            week +
+            " Standings";
+
         status.innerText =
             "No picks have been submitted for Week " +
             week +
@@ -815,9 +756,6 @@ async function loadLeaderboard() {
 
         }
 
-
-        // USE ATS RESULT
-        // Unfinished games automatically return false.
 
         if (
             pickIsWin(
@@ -901,7 +839,6 @@ async function loadLeaderboard() {
 
 </thead>
 
-
 <tbody>
 `;
 
@@ -969,10 +906,6 @@ async function loadSeasonLeaderboard() {
         );
 
 
-    // ==================================================
-    // GET GAMES
-    // ==================================================
-
     const {
         data: games,
         error: gamesError
@@ -999,10 +932,6 @@ async function loadSeasonLeaderboard() {
 
     }
 
-
-    // ==================================================
-    // GET PICKS
-    // ==================================================
 
     const {
         data: picks,
@@ -1044,10 +973,6 @@ async function loadSeasonLeaderboard() {
     }
 
 
-    // ==================================================
-    // GAME LOOKUP
-    // ==================================================
-
     const gameMap = {};
 
     games.forEach(game => {
@@ -1057,10 +982,6 @@ async function loadSeasonLeaderboard() {
 
     });
 
-
-    // ==================================================
-    // CALCULATE TOTALS
-    // ==================================================
 
     const players = {};
 
@@ -1089,13 +1010,9 @@ async function loadSeasonLeaderboard() {
 
 
         if (!game) {
-
             return;
-
         }
 
-
-        // ONLY COMPLETED GAMES COUNT
 
         if (
             pickIsWin(
@@ -1113,10 +1030,6 @@ async function loadSeasonLeaderboard() {
 
     });
 
-
-    // ==================================================
-    // SORT BY TOTAL WINS
-    // ==================================================
 
     const names =
         Object.keys(players);
@@ -1147,10 +1060,6 @@ async function loadSeasonLeaderboard() {
     );
 
 
-    // ==================================================
-    // DISPLAY
-    // ==================================================
-
     let html = `
 
 <table>
@@ -1170,7 +1079,6 @@ async function loadSeasonLeaderboard() {
 </tr>
 
 </thead>
-
 
 <tbody>
 `;
@@ -1232,10 +1140,6 @@ async function loadWeeklyWinners() {
         );
 
 
-    // ==================================================
-    // GET GAMES
-    // ==================================================
-
     const {
         data: games,
         error: gamesError
@@ -1262,10 +1166,6 @@ async function loadWeeklyWinners() {
 
     }
 
-
-    // ==================================================
-    // GET PICKS
-    // ==================================================
 
     const {
         data: picks,
@@ -1294,10 +1194,6 @@ async function loadWeeklyWinners() {
     }
 
 
-    // ==================================================
-    // GAME LOOKUP
-    // ==================================================
-
     const gameMap = {};
 
 
@@ -1308,10 +1204,6 @@ async function loadWeeklyWinners() {
 
     });
 
-
-    // ==================================================
-    // CALCULATE WEEKLY POINTS
-    // ==================================================
 
     const weekly = {};
 
@@ -1327,16 +1219,9 @@ async function loadWeeklyWinners() {
 
 
         if (!game) {
-
             return;
-
         }
 
-
-        // ------------------------------------------------
-        // IMPORTANT:
-        // Ignore unfinished games completely.
-        // ------------------------------------------------
 
         if (
             !isGameCompleted(game)
@@ -1367,8 +1252,6 @@ async function loadWeeklyWinners() {
         }
 
 
-        // SAME ATS LOGIC
-
         if (
             pickIsWin(
                 pick,
@@ -1384,10 +1267,6 @@ async function loadWeeklyWinners() {
     });
 
 
-    // ==================================================
-    // CREATE TABLE
-    // ==================================================
-
     let rows = "";
 
 
@@ -1398,12 +1277,8 @@ async function loadWeeklyWinners() {
     ) {
 
 
-        // No completed games for this week
-
         if (!weekly[week]) {
-
             continue;
-
         }
 
 
@@ -1470,10 +1345,6 @@ ${highest}
     }
 
 
-    // ==================================================
-    // DISPLAY
-    // ==================================================
-
     if (rows === "") {
 
         container.innerHTML =
@@ -1502,7 +1373,6 @@ ${highest}
 
 </thead>
 
-
 <tbody>
 
 ${rows}
@@ -1519,9 +1389,13 @@ ${rows}
 // START
 // ==================================================
 
-loadWeekButtons();
+updateWeekDropdown()
+    .then(() => {
 
-loadLeaderboard();
+        loadLeaderboard();
+
+    });
+
 
 loadSeasonLeaderboard();
 
@@ -1534,7 +1408,7 @@ loadWeeklyWinners();
 
 setInterval(() => {
 
-    loadWeekButtons();
+    updateWeekDropdown();
 
     loadLeaderboard();
 
