@@ -247,13 +247,16 @@ th {
 
 <header>
 
-<h1>🏈 LamFam 2026-2027 — Live Weekly Picks</h1>
+<h1>
+🏈 LamFam 2026-2027 — Live Weekly Picks
+</h1>
 
 <p>
 Watch the pool standings change as games finish
 </p>
 
 </header>
+
 
 <main>
 
@@ -316,7 +319,9 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 
 <div class="card">
 
-<h2>🏆 Current Week Standings</h2>
+<h2 id="weeklyStandingsTitle">
+🏆 Current Week Standings
+</h2>
 
 <div id="weeklyStandings"></div>
 
@@ -329,7 +334,9 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 
 <div class="card">
 
-<h2>🏆 Season Standings</h2>
+<h2>
+🏆 Season Standings
+</h2>
 
 <div id="seasonStandings"></div>
 
@@ -342,7 +349,9 @@ Weekly confidence points reset each week. Season wins accumulate throughout the 
 
 <div class="card">
 
-<h2>🏈 Game Results</h2>
+<h2>
+🏈 Game Results
+</h2>
 
 <div id="gameResults">
 Loading game results...
@@ -357,7 +366,9 @@ Loading game results...
 
 <div class="card">
 
-<h2>Player Picks</h2>
+<h2>
+Player Picks
+</h2>
 
 <div class="player-picks-wrapper">
 
@@ -368,6 +379,7 @@ Loading picks...
 </div>
 
 </div>
+
 
 </main>
 
@@ -745,7 +757,6 @@ function buildGameResults(games) {
 
             if (hasScores) {
 
-
                 // ==================================================
                 // ACTUAL GAME WINNER — TROPHY
                 // ==================================================
@@ -1082,6 +1093,17 @@ async function loadLivePicks() {
                 "weekSelect"
             ).value
         );
+
+
+    // ==================================================
+    // NEW: UPDATE CURRENT WEEK STANDINGS TITLE
+    // ==================================================
+
+    document.getElementById(
+        "weeklyStandingsTitle"
+    ).innerText =
+        "🏆 Current Week Standings — Week " +
+        selectedWeek;
 
 
     const status =
@@ -1576,6 +1598,7 @@ ${weeklyData[player].points}
     weeklyHtml += `
 
 </tbody>
+
 </table>
 
 `;
@@ -1657,6 +1680,7 @@ ${seasonData[player].wins}
     seasonHtml += `
 
 </tbody>
+
 </table>
 
 `;
