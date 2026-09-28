@@ -617,7 +617,9 @@ function buildGameResults(games) {
 
         if (hasScores) {
 
-            /* Actual game winner icon */
+            /*
+                ACTUAL GAME WINNER ICON
+            */
 
             if (
                 Number(awayScore) >
@@ -651,15 +653,15 @@ function buildGameResults(games) {
             /*
                 ATS COLORING
 
-                The pool counts an exact spread push
-                as a WIN.
+                Exact spread push counts as a win.
 
                 Example:
                 Ravens -3
-                Ravens win 27-24
+                Ravens 27
+                Cowboys 24
 
-                Ravens = green
-                Cowboys = red
+                Ravens = GREEN
+                Cowboys = RED
             */
 
             if (
@@ -682,10 +684,10 @@ function buildGameResults(games) {
 
                 /*
                     Both true means an exact-spread
-                    push because >= is used.
+                    push because the pool uses >=.
 
-                    Show the favorite green and
-                    underdog red.
+                    Favorite gets GREEN.
+                    Underdog gets RED.
                 */
 
                 if (
@@ -757,8 +759,8 @@ function buildGameResults(games) {
             } else {
 
                 /*
-                    If no usable spread exists,
-                    use the actual game winner.
+                    If there is no usable spread,
+                    use actual game winner.
                 */
 
                 if (
@@ -971,7 +973,10 @@ async function loadLivePicks() {
 
     /*
         STEP 1:
-        Load the games.
+        Load the games directly from Supabase.
+
+        Scores are entered manually by the admin.
+        This page does NOT update scores.
     */
 
     const {
@@ -1032,125 +1037,24 @@ async function loadLivePicks() {
 
 
     /*
-        STEP 3:
-        Try to update NFL scores.
-
         IMPORTANT:
-        The 10-second timeout prevents
-        this function from freezing the
-        entire Live Picks page.
+
+        There is NO automatic score-loading function here.
+
+        Scores are manually entered into the games table.
     */
-
-    try {
-
-        const controller =
-            new AbortController();
-
-
-        const timeout =
-            setTimeout(
-                () => {
-                    controller.abort();
-                },
-                10000
-            );
-
-
-        const response =
-            await fetch(
-
-                SUPABASE_URL +
-                "/functions/v1/get-nfl-scores?week=" +
-                selectedWeek,
-
-                {
-                    method: "POST",
-                    signal: controller.signal
-                }
-            );
-
-
-        clearTimeout(timeout);
-
-
-        if (!response.ok) {
-
-            console.error(
-                "Score function HTTP status:",
-                response.status
-            );
-
-        } else {
-
-            const scoreResult =
-                await response.json();
-
-            console.log(
-                "Score update:",
-                scoreResult
-            );
-        }
-
-
-    } catch (error) {
-
-        console.error(
-            "Score update failed or timed out:",
-            error
-        );
-    }
 
 
     /*
-        STEP 4:
-        Reload games after score update.
-    */
-
-    const {
-        data: updatedGames,
-        error: updatedGamesError
-    } =
-        await supabaseClient
-            .from("games")
-            .select(
-                "id,week,team1,team2,home_team,spread,home_score,away_score,game_time"
-            )
-            .eq(
-                "week",
-                selectedWeek
-            );
-
-
-    if (updatedGamesError) {
-
-        console.error(
-            updatedGamesError
-        );
-
-        status.innerText =
-            "Error loading updated games.";
-
-        return;
-    }
-
-
-    /*
-        STEP 5:
-        Update week dropdown.
-    */
-
-    await updateWeekDropdown();
-
-
-    /*
-        STEP 6:
-        Build results lookup.
+        STEP 3:
+        Build results directly from the games
+        already stored in Supabase.
     */
 
     const results = {};
 
 
-    updatedGames.forEach(
+    games.forEach(
         game => {
 
             const hasScores =
@@ -1173,17 +1077,25 @@ async function loadLivePicks() {
 
 
     /*
-        STEP 7:
+        STEP 4:
         Game Results.
     */
 
     buildGameResults(
-        updatedGames
+        games
     );
 
 
     /*
-        STEP 8:
+        STEP 5:
+        Update week dropdown.
+    */
+
+    await updateWeekDropdown();
+
+
+    /*
+        STEP 6:
         Build player list.
     */
 
@@ -1209,7 +1121,7 @@ async function loadLivePicks() {
 
 
     /*
-        STEP 9:
+        STEP 7:
         Weekly data.
     */
 
@@ -1293,7 +1205,7 @@ async function loadLivePicks() {
 
 
     /*
-        STEP 10:
+        STEP 8:
         Load all season games.
     */
 
@@ -1323,7 +1235,7 @@ async function loadLivePicks() {
 
 
     /*
-        STEP 11:
+        STEP 9:
         Season results.
     */
 
@@ -1353,7 +1265,7 @@ async function loadLivePicks() {
 
 
     /*
-        STEP 12:
+        STEP 10:
         Season wins.
     */
 
@@ -1403,7 +1315,7 @@ async function loadLivePicks() {
 
 
     /*
-        STEP 13:
+        STEP 11:
         Weekly standings.
     */
 
@@ -1473,7 +1385,7 @@ ${weeklyData[player].points}
 
 
     /*
-        STEP 14:
+        STEP 12:
         Season standings.
     */
 
@@ -1543,7 +1455,7 @@ ${seasonData[player].wins}
 
 
     /*
-        STEP 15:
+        STEP 13:
         Player data.
     */
 
