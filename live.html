@@ -1,16 +1,14 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>LamFam 2026-2027 Live Picks</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-
 body {
     margin: 0;
     font-family: Arial, sans-serif;
@@ -74,11 +72,6 @@ button:hover {
     font-weight: bold;
 }
 
-
-/* ==================================================
-   NORMAL TABLES
-   ================================================== */
-
 table {
     border-collapse: collapse;
     width: max-content;
@@ -97,11 +90,6 @@ th {
     background: #111827;
     color: white;
 }
-
-
-/* ==================================================
-   PLAYER PICKS — EXTRA WIDE
-   ================================================== */
 
 .player-picks-wrapper {
     overflow-x: auto;
@@ -125,11 +113,6 @@ th {
     font-weight: bold;
     border: 2px solid #333;
 }
-
-
-/* ==================================================
-   PICK COLORS
-   ================================================== */
 
 .confidence {
     font-weight: bold;
@@ -176,11 +159,6 @@ th {
     color: #374151;
     margin-top: 3px;
 }
-
-
-/* ==================================================
-   GAME RESULTS
-   ================================================== */
 
 .game-results {
     width: 100%;
@@ -238,73 +216,1584 @@ th {
     font-weight: bold;
     margin-left: 5px;
 }
-
 </style>
-
 </head>
 
 <body>
 
 <header>
-
-<h1>
-🏈 LamFam 2026-2027 — Live Weekly Picks
-</h1>
-
-<p>
-Watch the pool standings change as games finish
-</p>
-
+    <h1>🏈 LamFam 2026-2027 — Live Weekly Picks</h1>
+    <p>Watch the pool standings change as games finish</p>
 </header>
-
 
 <main>
 
-
-<!-- ==================================================
-     CONTROLS
-     ================================================== -->
-
 <div class="card">
 
-<div class="controls">
+    <div class="controls">
 
-<label for="weekSelect">
-<strong>Week:</strong>
-</label>
+        <label for="weekSelect">
+            <strong>Week:</strong>
+        </label>
 
-<select id="weekSelect">
+        <select id="weekSelect">
 
-<option value="1">Week 1</option>
-<option value="2">Week 2</option>
-<option value="3">Week 3</option>
-<option value="4">Week 4</option>
-<option value="5">Week 5</option>
-<option value="6">Week 6</option>
-<option value="7">Week 7</option>
-<option value="8">Week 8</option>
-<option value="9">Week 9</option>
-<option value="10">Week 10</option>
-<option value="11">Week 11</option>
-<option value="12">Week 12</option>
-<option value="13">Week 13</option>
-<option value="14">Week 14</option>
-<option value="15">Week 15</option>
-<option value="16">Week 16</option>
-<option value="17">Week 17</option>
-<option value="18">Week 18</option>
+            <option value="1">Week 1</option>
+            <option value="2">Week 2</option>
+            <option value="3">Week 3</option>
+            <option value="4">Week 4</option>
+            <option value="5">Week 5</option>
+            <option value="6">Week 6</option>
+            <option value="7">Week 7</option>
+            <option value="8">Week 8</option>
+            <option value="9">Week 9</option>
+            <option value="10">Week 10</option>
+            <option value="11">Week 11</option>
+            <option value="12">Week 12</option>
+            <option value="13">Week 13</option>
+            <option value="14">Week 14</option>
+            <option value="15">Week 15</option>
+            <option value="16">Week 16</option>
+            <option value="17">Week 17</option>
+            <option value="18">Week 18</option>
 
-</select>
+        </select>
 
-<button onclick="loadLivePicks()">
-Refresh
-</button>
+        <button onclick="loadLivePicks()">Refresh</button>
+
+    </div>
+
+    <p id="status">Loading...</p>
+
+    <p class="small">
+        Weekly confidence points reset each week.
+        Season wins accumulate throughout the season.
+    </p>
 
 </div>
 
-<p id="status">
-Loading...
-</p>
 
-<p class="small">
-Weekly confidence points reset each
+<div class="card">
+
+    <h2 id="weeklyStandingsTitle">
+        🏆 Current Week Standings
+    </h2>
+
+    <div id="weeklyStandings">
+        Loading standings...
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <h2>🏆 Season Standings</h2>
+
+    <div id="seasonStandings">
+        Loading season standings...
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <h2>🏈 Game Results</h2>
+
+    <div id="gameResults">
+        Loading game results...
+    </div>
+
+</div>
+
+
+<div class="card">
+
+    <h2>Player Picks</h2>
+
+    <div class="player-picks-wrapper">
+
+        <div id="liveTable">
+            Loading picks...
+        </div>
+
+    </div>
+
+</div>
+
+</main>
+
+
+<script>
+
+const SUPABASE_URL =
+    "https://bgkcnsnydchfghyhwurw.supabase.co";
+
+const SUPABASE_KEY =
+    "sb_publishable_CzYkbEOaBmQbXroYYOXDbA_6NX6kZLz";
+
+const supabaseClient =
+    supabase.createClient(
+        SUPABASE_URL,
+        SUPABASE_KEY
+    );
+
+
+/* -------------------------------------------------------
+   SPREAD FUNCTIONS
+------------------------------------------------------- */
+
+function parseSpreadForTeam(spreadText, team) {
+
+    if (!spreadText) {
+        return null;
+    }
+
+    const parts = spreadText.split("/");
+
+    for (const part of parts) {
+
+        const text = part.trim();
+
+        const match =
+            text.match(/^(.*?)\s+([+-]?\d+(?:\.\d+)?)$/);
+
+        if (!match) {
+            continue;
+        }
+
+        const teamName = match[1].trim();
+        const spread = Number(match[2]);
+
+        if (teamName === team) {
+            return spread;
+        }
+    }
+
+    return null;
+}
+
+
+function getFavoriteForGame(game) {
+
+    const team1Spread =
+        parseSpreadForTeam(
+            game.spread,
+            game.team1
+        );
+
+    const team2Spread =
+        parseSpreadForTeam(
+            game.spread,
+            game.team2
+        );
+
+    if (
+        team1Spread !== null &&
+        team1Spread < 0
+    ) {
+        return {
+            team: game.team1,
+            spread: team1Spread
+        };
+    }
+
+    if (
+        team2Spread !== null &&
+        team2Spread < 0
+    ) {
+        return {
+            team: game.team2,
+            spread: team2Spread
+        };
+    }
+
+    return null;
+}
+
+
+/* -------------------------------------------------------
+   MASCOTS
+------------------------------------------------------- */
+
+function getMascotName(team) {
+
+    const mascotNames = {
+
+        "Arizona Cardinals": "Cardinals",
+        "Atlanta Falcons": "Falcons",
+        "Baltimore Ravens": "Ravens",
+        "Buffalo Bills": "Bills",
+        "Carolina Panthers": "Panthers",
+        "Chicago Bears": "Bears",
+        "Cincinnati Bengals": "Bengals",
+        "Cleveland Browns": "Browns",
+        "Dallas Cowboys": "Cowboys",
+        "Denver Broncos": "Broncos",
+        "Detroit Lions": "Lions",
+        "Green Bay Packers": "Packers",
+        "Houston Texans": "Texans",
+        "Indianapolis Colts": "Colts",
+        "Jacksonville Jaguars": "Jaguars",
+        "Kansas City Chiefs": "Chiefs",
+        "Las Vegas Raiders": "Raiders",
+        "Los Angeles Chargers": "Chargers",
+        "Los Angeles Rams": "Rams",
+        "Miami Dolphins": "Dolphins",
+        "Minnesota Vikings": "Vikings",
+        "New England Patriots": "Patriots",
+        "New Orleans Saints": "Saints",
+        "New York Giants": "Giants",
+        "New York Jets": "Jets",
+        "Philadelphia Eagles": "Eagles",
+        "Pittsburgh Steelers": "Steelers",
+        "San Francisco 49ers": "49ers",
+        "Seattle Seahawks": "Seahawks",
+        "Tampa Bay Buccaneers": "Buccaneers",
+        "Tennessee Titans": "Titans",
+        "Washington Commanders": "Commanders"
+
+    };
+
+    return mascotNames[team] || team;
+}
+
+
+/* -------------------------------------------------------
+   WEEK DROPDOWN
+------------------------------------------------------- */
+
+async function updateWeekDropdown() {
+
+    const select =
+        document.getElementById("weekSelect");
+
+    const currentWeek =
+        select.value;
+
+    const {
+        data: games,
+        error
+    } =
+        await supabaseClient
+            .from("games")
+            .select(
+                "week,home_score,away_score"
+            )
+            .gte("week", 1)
+            .lte("week", 18);
+
+    if (error) {
+
+        console.error(
+            "Error loading week status:",
+            error
+        );
+
+        return;
+    }
+
+    for (
+        let week = 1;
+        week <= 18;
+        week++
+    ) {
+
+        const weekGames =
+            games.filter(
+                game =>
+                    Number(game.week) === week
+            );
+
+        const completed =
+            weekGames.length > 0 &&
+            weekGames.every(
+                game =>
+                    game.home_score !== null &&
+                    game.home_score !== undefined &&
+                    game.away_score !== null &&
+                    game.away_score !== undefined
+            );
+
+        const option =
+            select.querySelector(
+                `option[value="${week}"]`
+            );
+
+        if (option) {
+
+            option.textContent =
+                completed
+                    ? `Week ${week} ✓`
+                    : `Week ${week}`;
+        }
+    }
+
+    select.value = currentWeek;
+}
+
+
+/* -------------------------------------------------------
+   GAME RESULTS
+------------------------------------------------------- */
+
+function buildGameResults(games) {
+
+    if (
+        !games ||
+        games.length === 0
+    ) {
+
+        document.getElementById(
+            "gameResults"
+        ).innerHTML =
+            "<p>No games found for this week.</p>";
+
+        return;
+    }
+
+
+    games.sort(
+        (a, b) =>
+            new Date(a.game_time) -
+            new Date(b.game_time)
+    );
+
+
+    let html = `
+
+<table class="game-results">
+
+<thead>
+
+<tr>
+<th>AWAY TEAM</th>
+<th>SCORE</th>
+<th></th>
+<th>SCORE</th>
+<th>HOME TEAM</th>
+</tr>
+
+</thead>
+
+<tbody>
+`;
+
+
+    games.forEach(game => {
+
+        const homeTeam =
+            game.home_team;
+
+        const awayTeam =
+            homeTeam === game.team1
+                ? game.team2
+                : game.team1;
+
+        const awayScore =
+            game.away_score;
+
+        const homeScore =
+            game.home_score;
+
+
+        const hasScores =
+            awayScore !== null &&
+            awayScore !== undefined &&
+            homeScore !== null &&
+            homeScore !== undefined;
+
+
+        let awayClass =
+            "game-pending";
+
+        let homeClass =
+            "game-pending";
+
+        let awayIcon = "";
+        let homeIcon = "";
+
+
+        if (hasScores) {
+
+            /* Actual game winner icon */
+
+            if (
+                Number(awayScore) >
+                Number(homeScore)
+            ) {
+
+                awayIcon = " 🏆";
+
+            } else if (
+                Number(homeScore) >
+                Number(awayScore)
+            ) {
+
+                homeIcon = " 🏆";
+            }
+
+
+            const awaySpread =
+                parseSpreadForTeam(
+                    game.spread,
+                    awayTeam
+                );
+
+            const homeSpread =
+                parseSpreadForTeam(
+                    game.spread,
+                    homeTeam
+                );
+
+
+            /*
+                ATS COLORING
+
+                The pool counts an exact spread push
+                as a WIN.
+
+                Example:
+                Ravens -3
+                Ravens win 27-24
+
+                Ravens = green
+                Cowboys = red
+            */
+
+            if (
+                awaySpread !== null &&
+                homeSpread !== null
+            ) {
+
+                const awayCovered =
+                    pickCovered(
+                        game,
+                        awayTeam
+                    );
+
+                const homeCovered =
+                    pickCovered(
+                        game,
+                        homeTeam
+                    );
+
+
+                /*
+                    Both true means an exact-spread
+                    push because >= is used.
+
+                    Show the favorite green and
+                    underdog red.
+                */
+
+                if (
+                    awayCovered &&
+                    homeCovered
+                ) {
+
+                    const favorite =
+                        getFavoriteForGame(game);
+
+
+                    if (
+                        favorite &&
+                        favorite.team === awayTeam
+                    ) {
+
+                        awayClass =
+                            "game-winner";
+
+                        homeClass =
+                            "game-loser";
+
+                    } else if (
+                        favorite &&
+                        favorite.team === homeTeam
+                    ) {
+
+                        homeClass =
+                            "game-winner";
+
+                        awayClass =
+                            "game-loser";
+
+                    } else {
+
+                        awayClass =
+                            "game-winner";
+
+                        homeClass =
+                            "game-loser";
+                    }
+
+
+                } else if (
+                    awayCovered &&
+                    !homeCovered
+                ) {
+
+                    awayClass =
+                        "game-winner";
+
+                    homeClass =
+                        "game-loser";
+
+
+                } else if (
+                    homeCovered &&
+                    !awayCovered
+                ) {
+
+                    homeClass =
+                        "game-winner";
+
+                    awayClass =
+                        "game-loser";
+                }
+
+
+            } else {
+
+                /*
+                    If no usable spread exists,
+                    use the actual game winner.
+                */
+
+                if (
+                    Number(awayScore) >
+                    Number(homeScore)
+                ) {
+
+                    awayClass =
+                        "game-winner";
+
+                    homeClass =
+                        "game-loser";
+
+                } else if (
+                    Number(homeScore) >
+                    Number(awayScore)
+                ) {
+
+                    homeClass =
+                        "game-winner";
+
+                    awayClass =
+                        "game-loser";
+
+                } else {
+
+                    awayClass =
+                        "game-winner";
+
+                    homeClass =
+                        "game-winner";
+                }
+            }
+        }
+
+
+        const favorite =
+            getFavoriteForGame(game);
+
+
+        let awayName =
+            getMascotName(awayTeam);
+
+        let homeName =
+            getMascotName(homeTeam);
+
+
+        if (
+            favorite &&
+            favorite.team === awayTeam
+        ) {
+
+            awayName +=
+                ` <span class="favorite-spread">${favorite.spread}</span>`;
+        }
+
+
+        if (
+            favorite &&
+            favorite.team === homeTeam
+        ) {
+
+            homeName +=
+                ` <span class="favorite-spread">${favorite.spread}</span>`;
+        }
+
+
+        html += `
+
+<tr>
+
+<td class="game-team ${awayClass}">
+${awayName}${awayIcon}
+</td>
+
+<td class="game-score ${awayClass}">
+${hasScores ? awayScore : "—"}
+</td>
+
+<td class="game-vs">
+vs.
+</td>
+
+<td class="game-score ${homeClass}">
+${hasScores ? homeScore : "—"}
+</td>
+
+<td class="game-team ${homeClass}">
+${homeIcon}${homeName}
+</td>
+
+</tr>
+`;
+    });
+
+
+    html += `
+
+</tbody>
+
+</table>
+`;
+
+
+    document.getElementById(
+        "gameResults"
+    ).innerHTML = html;
+}
+
+
+/* -------------------------------------------------------
+   ATS CALCULATION
+------------------------------------------------------- */
+
+function pickCovered(
+    game,
+    pickedTeam
+) {
+
+    const homeScore =
+        Number(game.home_score);
+
+    const awayScore =
+        Number(game.away_score);
+
+
+    if (
+        Number.isNaN(homeScore) ||
+        Number.isNaN(awayScore)
+    ) {
+
+        return false;
+    }
+
+
+    const homeTeam =
+        game.home_team;
+
+    const awayTeam =
+        homeTeam === game.team1
+            ? game.team2
+            : game.team1;
+
+
+    const pickedScore =
+        pickedTeam === homeTeam
+            ? homeScore
+            : awayScore;
+
+    const opponentScore =
+        pickedTeam === homeTeam
+            ? awayScore
+            : homeScore;
+
+
+    const spread =
+        parseSpreadForTeam(
+            game.spread,
+            pickedTeam
+        );
+
+
+    if (spread === null) {
+        return false;
+    }
+
+
+    const adjustedScore =
+        pickedScore + spread;
+
+
+    /*
+        PUSH COUNTS AS A WIN
+    */
+
+    return adjustedScore >= opponentScore;
+}
+
+
+/* -------------------------------------------------------
+   MAIN LIVE LOAD
+------------------------------------------------------- */
+
+async function loadLivePicks() {
+
+    const selectedWeek =
+        parseInt(
+            document.getElementById(
+                "weekSelect"
+            ).value
+        );
+
+
+    document.getElementById(
+        "weeklyStandingsTitle"
+    ).innerText =
+        "🏆 Current Week Standings — Week " +
+        selectedWeek;
+
+
+    const status =
+        document.getElementById(
+            "status"
+        );
+
+
+    status.innerText =
+        "Loading live results...";
+
+
+    /*
+        STEP 1:
+        Load the games.
+    */
+
+    const {
+        data: games,
+        error: gamesError
+    } =
+        await supabaseClient
+            .from("games")
+            .select(
+                "id,week,team1,team2,home_team,spread,home_score,away_score,game_time"
+            )
+            .eq(
+                "week",
+                selectedWeek
+            );
+
+
+    if (gamesError) {
+
+        console.error(
+            gamesError
+        );
+
+        status.innerText =
+            "Error loading games.";
+
+        return;
+    }
+
+
+    /*
+        STEP 2:
+        Load all picks.
+    */
+
+    const {
+        data: allPicks,
+        error: picksError
+    } =
+        await supabaseClient
+            .from("Picks")
+            .select(
+                "player-name,game_id,team-picked,confidence,week"
+            );
+
+
+    if (picksError) {
+
+        console.error(
+            picksError
+        );
+
+        status.innerText =
+            "Error loading picks.";
+
+        return;
+    }
+
+
+    /*
+        STEP 3:
+        Try to update NFL scores.
+
+        IMPORTANT:
+        The 10-second timeout prevents
+        this function from freezing the
+        entire Live Picks page.
+    */
+
+    try {
+
+        const controller =
+            new AbortController();
+
+
+        const timeout =
+            setTimeout(
+                () => {
+                    controller.abort();
+                },
+                10000
+            );
+
+
+        const response =
+            await fetch(
+
+                SUPABASE_URL +
+                "/functions/v1/get-nfl-scores?week=" +
+                selectedWeek,
+
+                {
+                    method: "POST",
+                    signal: controller.signal
+                }
+            );
+
+
+        clearTimeout(timeout);
+
+
+        if (!response.ok) {
+
+            console.error(
+                "Score function HTTP status:",
+                response.status
+            );
+
+        } else {
+
+            const scoreResult =
+                await response.json();
+
+            console.log(
+                "Score update:",
+                scoreResult
+            );
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            "Score update failed or timed out:",
+            error
+        );
+    }
+
+
+    /*
+        STEP 4:
+        Reload games after score update.
+    */
+
+    const {
+        data: updatedGames,
+        error: updatedGamesError
+    } =
+        await supabaseClient
+            .from("games")
+            .select(
+                "id,week,team1,team2,home_team,spread,home_score,away_score,game_time"
+            )
+            .eq(
+                "week",
+                selectedWeek
+            );
+
+
+    if (updatedGamesError) {
+
+        console.error(
+            updatedGamesError
+        );
+
+        status.innerText =
+            "Error loading updated games.";
+
+        return;
+    }
+
+
+    /*
+        STEP 5:
+        Update week dropdown.
+    */
+
+    await updateWeekDropdown();
+
+
+    /*
+        STEP 6:
+        Build results lookup.
+    */
+
+    const results = {};
+
+
+    updatedGames.forEach(
+        game => {
+
+            const hasScores =
+                game.home_score !== null &&
+                game.home_score !== undefined &&
+                game.away_score !== null &&
+                game.away_score !== undefined;
+
+
+            results[game.id] = {
+
+                completed:
+                    hasScores,
+
+                game:
+                    game
+            };
+        }
+    );
+
+
+    /*
+        STEP 7:
+        Game Results.
+    */
+
+    buildGameResults(
+        updatedGames
+    );
+
+
+    /*
+        STEP 8:
+        Build player list.
+    */
+
+    const players = [];
+
+
+    allPicks.forEach(
+        pick => {
+
+            const name =
+                pick["player-name"];
+
+
+            if (
+                name &&
+                !players.includes(name)
+            ) {
+
+                players.push(name);
+            }
+        }
+    );
+
+
+    /*
+        STEP 9:
+        Weekly data.
+    */
+
+    const weeklyData = {};
+
+
+    players.forEach(
+        player => {
+
+            weeklyData[player] = {
+
+                picks: {},
+
+                points: 0
+            };
+        }
+    );
+
+
+    /*
+        Only picks for selected week
+        count toward weekly points.
+    */
+
+    allPicks
+
+        .filter(
+            pick =>
+                Number(pick.week) ===
+                selectedWeek
+        )
+
+        .forEach(
+            pick => {
+
+                const player =
+                    pick["player-name"];
+
+                const confidence =
+                    Number(
+                        pick.confidence
+                    );
+
+
+                weeklyData[player].picks[
+                    confidence
+                ] = {
+
+                    team:
+                        pick["team-picked"],
+
+                    gameId:
+                        pick.game_id
+                };
+
+
+                const result =
+                    results[
+                        pick.game_id
+                    ];
+
+
+                if (
+                    result &&
+                    result.completed
+                ) {
+
+                    if (
+                        pickCovered(
+                            result.game,
+                            pick["team-picked"]
+                        )
+                    ) {
+
+                        weeklyData[player].points +=
+                            confidence;
+                    }
+                }
+            }
+        );
+
+
+    /*
+        STEP 10:
+        Load all season games.
+    */
+
+    const {
+        data: seasonGames,
+        error: seasonGamesError
+    } =
+        await supabaseClient
+            .from("games")
+            .select(
+                "id,week,team1,team2,home_team,spread,home_score,away_score"
+            );
+
+
+    if (seasonGamesError) {
+
+        console.error(
+            "Season games error:",
+            seasonGamesError
+        );
+
+        status.innerText =
+            "Error loading season games.";
+
+        return;
+    }
+
+
+    /*
+        STEP 11:
+        Season results.
+    */
+
+    const seasonResults = {};
+
+
+    seasonGames.forEach(
+        game => {
+
+            const hasScores =
+                game.home_score !== null &&
+                game.home_score !== undefined &&
+                game.away_score !== null &&
+                game.away_score !== undefined;
+
+
+            seasonResults[game.id] = {
+
+                completed:
+                    hasScores,
+
+                game:
+                    game
+            };
+        }
+    );
+
+
+    /*
+        STEP 12:
+        Season wins.
+    */
+
+    const seasonData = {};
+
+
+    players.forEach(
+        player => {
+
+            seasonData[player] = {
+
+                wins: 0
+            };
+        }
+    );
+
+
+    allPicks.forEach(
+        pick => {
+
+            const player =
+                pick["player-name"];
+
+            const result =
+                seasonResults[
+                    pick.game_id
+                ];
+
+
+            if (
+                result &&
+                result.completed
+            ) {
+
+                if (
+                    pickCovered(
+                        result.game,
+                        pick["team-picked"]
+                    )
+                ) {
+
+                    seasonData[player].wins++;
+                }
+            }
+        }
+    );
+
+
+    /*
+        STEP 13:
+        Weekly standings.
+    */
+
+    const weeklyPlayers =
+        [...players].sort(
+            (a, b) =>
+                weeklyData[b].points -
+                weeklyData[a].points
+        );
+
+
+    let weeklyHtml = `
+
+<table>
+
+<thead>
+
+<tr>
+<th>Rank</th>
+<th>Player</th>
+<th>Confidence Points</th>
+</tr>
+
+</thead>
+
+<tbody>
+`;
+
+
+    weeklyPlayers.forEach(
+        (player, index) => {
+
+            weeklyHtml += `
+
+<tr>
+
+<td>
+${index + 1}
+</td>
+
+<td>
+<strong>${player}</strong>
+</td>
+
+<td class="total">
+${weeklyData[player].points}
+</td>
+
+</tr>
+`;
+        }
+    );
+
+
+    weeklyHtml += `
+
+</tbody>
+
+</table>
+`;
+
+
+    document.getElementById(
+        "weeklyStandings"
+    ).innerHTML =
+        weeklyHtml;
+
+
+    /*
+        STEP 14:
+        Season standings.
+    */
+
+    const seasonPlayers =
+        [...players].sort(
+            (a, b) =>
+                seasonData[b].wins -
+                seasonData[a].wins
+        );
+
+
+    let seasonHtml = `
+
+<table>
+
+<thead>
+
+<tr>
+<th>Rank</th>
+<th>Player</th>
+<th>Total Wins</th>
+</tr>
+
+</thead>
+
+<tbody>
+`;
+
+
+    seasonPlayers.forEach(
+        (player, index) => {
+
+            seasonHtml += `
+
+<tr>
+
+<td>
+${index + 1}
+</td>
+
+<td>
+<strong>${player}</strong>
+</td>
+
+<td class="season-win">
+${seasonData[player].wins}
+</td>
+
+</tr>
+`;
+        }
+    );
+
+
+    seasonHtml += `
+
+</tbody>
+
+</table>
+`;
+
+
+    document.getElementById(
+        "seasonStandings"
+    ).innerHTML =
+        seasonHtml;
+
+
+    /*
+        STEP 15:
+        Player data.
+    */
+
+    const playerData = {};
+
+
+    players.forEach(
+        player => {
+
+            playerData[player] = {
+
+                picks:
+                    weeklyData[player].picks,
+
+                points:
+                    weeklyData[player].points
+            };
+        }
+    );
+
+
+    /*
+        Players are displayed in
+        current-week standings order.
+    */
+
+    const displayPlayers =
+        [...players].sort(
+            (a, b) =>
+                weeklyData[b].points -
+                weeklyData[a].points
+        );
+
+
+    let html = `
+
+<table>
+
+<thead>
+
+<tr>
+
+<th class="confidence">
+Confidence
+</th>
+`;
+
+
+    displayPlayers.forEach(
+        player => {
+
+            html += `
+
+<th class="player-header">
+${player}
+</th>
+`;
+        }
+    );
+
+
+    html += `
+
+</tr>
+
+</thead>
+
+<tbody>
+`;
+
+
+    /*
+        Confidence 10 through 1.
+    */
+
+    for (
+        let confidence = 10;
+        confidence >= 1;
+        confidence--
+    ) {
+
+        html += `
+
+<tr>
+
+<td class="confidence">
+${confidence}
+</td>
+`;
+
+
+        displayPlayers.forEach(
+            player => {
+
+                const pick =
+                    playerData[player]
+                        .picks[confidence];
+
+
+                if (!pick) {
+
+                    html += `
+
+<td class="pending">
+—
+</td>
+`;
+
+                    return;
+                }
+
+
+                const result =
+                    results[
+                        pick.gameId
+                    ];
+
+
+                let className =
+                    "pending";
+
+
+                if (
+                    result &&
+                    result.completed
+                ) {
+
+                    if (
+                        pickCovered(
+                            result.game,
+                            pick.team
+                        )
+                    ) {
+
+                        className =
+                            "correct";
+
+                    } else {
+
+                        className =
+                            "incorrect";
+                    }
+                }
+
+
+                const mascot =
+                    getMascotName(
+                        pick.team
+                    );
+
+
+                html += `
+
+<td class="pick ${className}">
+${mascot}
+</td>
+`;
+            }
+        );
+
+
+        html += `
+
+</tr>
+`;
+    }
+
+
+    /*
+        TOTAL ROW
+    */
+
+    html += `
+
+<tr>
+
+<td class="confidence">
+TOTAL
+</td>
+`;
+
+
+    displayPlayers.forEach(
+        player => {
+
+            html += `
+
+<td class="total">
+${playerData[player].points}
+</td>
+`;
+        }
+    );
+
+
+    html += `
+
+</tr>
+
+</tbody>
+
+</table>
+`;
+
+
+    document.getElementById(
+        "liveTable"
+    ).innerHTML =
+        html;
+
+
+    /*
+        Finished successfully.
+    */
+
+    status.innerText =
+        "Last updated: " +
+        new Date().toLocaleTimeString();
+}
+
+
+/* -------------------------------------------------------
+   INITIAL LOAD
+------------------------------------------------------- */
+
+updateWeekDropdown()
+    .then(() => {
+
+        loadLivePicks();
+
+    });
+
+
+/* -------------------------------------------------------
+   AUTO REFRESH EVERY 5 MINUTES
+------------------------------------------------------- */
+
+setInterval(
+    async () => {
+
+        await updateWeekDropdown();
+
+        loadLivePicks();
+
+    },
+    300000
+);
+
+</script>
+
+</body>
+</html>
+```
