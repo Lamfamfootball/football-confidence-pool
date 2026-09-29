@@ -413,4 +413,236 @@ function getFavoriteForGame(game) {
         team1Spread < 0
     ) {
         return {
-            team
+            team: game.team1,
+            spread: team1Spread
+        };
+    }
+
+    if (
+        team2Spread !== null &&
+        team2Spread < 0
+    ) {
+        return {
+            team: game.team2,
+            spread: team2Spread
+        };
+    }
+
+    return null;
+}
+
+
+/* -------------------------------------------------------
+   MASCOTS
+------------------------------------------------------- */
+
+function getMascotName(team) {
+
+    const mascotNames = {
+
+        "Arizona Cardinals": "Cardinals",
+        "Atlanta Falcons": "Falcons",
+        "Baltimore Ravens": "Ravens",
+        "Buffalo Bills": "Bills",
+        "Carolina Panthers": "Panthers",
+        "Chicago Bears": "Bears",
+        "Cincinnati Bengals": "Bengals",
+        "Cleveland Browns": "Browns",
+        "Dallas Cowboys": "Cowboys",
+        "Denver Broncos": "Broncos",
+        "Detroit Lions": "Lions",
+        "Green Bay Packers": "Packers",
+        "Houston Texans": "Texans",
+        "Indianapolis Colts": "Colts",
+        "Jacksonville Jaguars": "Jaguars",
+        "Kansas City Chiefs": "Chiefs",
+        "Las Vegas Raiders": "Raiders",
+        "Los Angeles Chargers": "Chargers",
+        "Los Angeles Rams": "Rams",
+        "Miami Dolphins": "Dolphins",
+        "Minnesota Vikings": "Vikings",
+        "New England Patriots": "Patriots",
+        "New Orleans Saints": "Saints",
+        "New York Giants": "Giants",
+        "New York Jets": "Jets",
+        "Philadelphia Eagles": "Eagles",
+        "Pittsburgh Steelers": "Steelers",
+        "San Francisco 49ers": "49ers",
+        "Seattle Seahawks": "Seahawks",
+        "Tampa Bay Buccaneers": "Buccaneers",
+        "Tennessee Titans": "Titans",
+        "Washington Commanders": "Commanders"
+
+    };
+
+    return mascotNames[team] || team;
+}
+
+
+/* -------------------------------------------------------
+   WEEK DROPDOWN
+------------------------------------------------------- */
+
+async function updateWeekDropdown() {
+
+    const select =
+        document.getElementById("weekSelect");
+
+    const currentWeek =
+        select.value;
+
+    const {
+        data: games,
+        error
+    } =
+        await supabaseClient
+            .from("games")
+            .select(
+                "week,home_score,away_score"
+            )
+            .gte("week", 1)
+            .lte("week", 18);
+
+    if (error) {
+
+        console.error(
+            "Error loading week status:",
+            error
+        );
+
+        return;
+    }
+
+    for (
+        let week = 1;
+        week <= 18;
+        week++
+    ) {
+
+        const weekGames =
+            games.filter(
+                game =>
+                    Number(game.week) === week
+            );
+
+        const completed =
+            weekGames.length > 0 &&
+            weekGames.every(
+                game =>
+                    game.home_score !== null &&
+                    game.home_score !== undefined &&
+                    game.away_score !== null &&
+                    game.away_score !== undefined
+            );
+
+        const option =
+            select.querySelector(
+                `option[value="${week}"]`
+            );
+
+        if (option) {
+
+            option.textContent =
+                completed
+                    ? `Week ${week} ✓`
+                    : `Week ${week}`;
+        }
+    }
+
+    select.value = currentWeek;
+}
+
+
+/* -------------------------------------------------------
+   GAME RESULTS
+------------------------------------------------------- */
+
+function buildGameResults(games) {
+
+    if (
+        !games ||
+        games.length === 0
+    ) {
+
+        document.getElementById(
+            "gameResults"
+        ).innerHTML =
+            "<p>No games found for this week.</p>";
+
+        return;
+    }
+
+
+    games.sort(
+        (a, b) =>
+            new Date(a.game_time) -
+            new Date(b.game_time)
+    );
+
+
+    let html = `
+
+<table class="game-results">
+
+<thead>
+
+<tr>
+<th>AWAY TEAM</th>
+<th>SCORE</th>
+<th></th>
+<th>SCORE</th>
+<th>HOME TEAM</th>
+</tr>
+
+</thead>
+
+<tbody>
+`;
+
+
+    games.forEach(game => {
+
+        const homeTeam =
+            game.home_team;
+
+        const awayTeam =
+            homeTeam === game.team1
+                ? game.team2
+                : game.team1;
+
+        const awayScore =
+            game.away_score;
+
+        const homeScore =
+            game.home_score;
+
+
+        const hasScores =
+            awayScore !== null &&
+            awayScore !== undefined &&
+            homeScore !== null &&
+            homeScore !== undefined;
+
+
+        let awayClass =
+            "game-pending";
+
+        let homeClass =
+            "game-pending";
+
+        let awayIcon = "";
+        let homeIcon = "";
+
+
+        if (hasScores) {
+
+            /*
+                ACTUAL GAME WINNER ICON
+            */
+
+            if (
+                Number(awayScore) >
+                Number(homeScore)
+            ) {
+
+                awayIcon = " 🏆
