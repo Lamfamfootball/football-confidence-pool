@@ -645,4 +645,1065 @@ function buildGameResults(games) {
                 Number(homeScore)
             ) {
 
-                awayIcon = " 🏆
+                awayIcon = " 🏆";
+
+            } else if (
+                Number(homeScore) >
+                Number(awayScore)
+            ) {
+
+                homeIcon = " 🏆";
+            }
+
+
+            const awaySpread =
+                parseSpreadForTeam(
+                    game.spread,
+                    awayTeam
+                );
+
+            const homeSpread =
+                parseSpreadForTeam(
+                    game.spread,
+                    homeTeam
+                );
+
+
+            /*
+                ATS COLORING
+
+                Exact spread push counts as a win.
+            */
+
+            if (
+                awaySpread !== null &&
+                homeSpread !== null
+            ) {
+
+                const awayCovered =
+                    pickCovered(
+                        game,
+                        awayTeam
+                    );
+
+                const homeCovered =
+                    pickCovered(
+                        game,
+                        homeTeam
+                    );
+
+
+                /*
+                    Both true means an exact-spread
+                    push because the pool uses >=.
+
+                    Favorite gets GREEN.
+                    Underdog gets RED.
+                */
+
+                if (
+                    awayCovered &&
+                    homeCovered
+                ) {
+
+                    const favorite =
+                        getFavoriteForGame(game);
+
+
+                    if (
+                        favorite &&
+                        favorite.team === awayTeam
+                    ) {
+
+                        awayClass =
+                            "game-winner";
+
+                        homeClass =
+                            "game-loser";
+
+                    } else if (
+                        favorite &&
+                        favorite.team === homeTeam
+                    ) {
+
+                        homeClass =
+                            "game-winner";
+
+                        awayClass =
+                            "game-loser";
+
+                    } else {
+
+                        awayClass =
+                            "game-winner";
+
+                        homeClass =
+                            "game-loser";
+                    }
+
+
+                } else if (
+                    awayCovered &&
+                    !homeCovered
+                ) {
+
+                    awayClass =
+                        "game-winner";
+
+                    homeClass =
+                        "game-loser";
+
+
+                } else if (
+                    homeCovered &&
+                    !awayCovered
+                ) {
+
+                    homeClass =
+                        "game-winner";
+
+                    awayClass =
+                        "game-loser";
+                }
+
+
+            } else {
+
+                /*
+                    If there is no usable spread,
+                    use actual game winner.
+                */
+
+                if (
+                    Number(awayScore) >
+                    Number(homeScore)
+                ) {
+
+                    awayClass =
+                        "game-winner";
+
+                    homeClass =
+                        "game-loser";
+
+                } else if (
+                    Number(homeScore) >
+                    Number(awayScore)
+                ) {
+
+                    homeClass =
+                        "game-winner";
+
+                    awayClass =
+                        "game-loser";
+
+                } else {
+
+                    awayClass =
+                        "game-winner";
+
+                    homeClass =
+                        "game-winner";
+                }
+            }
+        }
+
+
+        const favorite =
+            getFavoriteForGame(game);
+
+
+        let awayName =
+            getMascotName(awayTeam);
+
+        let homeName =
+            getMascotName(homeTeam);
+
+
+        if (
+            favorite &&
+            favorite.team === awayTeam
+        ) {
+
+            awayName +=
+                ` <span class="favorite-spread">${favorite.spread}</span>`;
+        }
+
+
+        if (
+            favorite &&
+            favorite.team === homeTeam
+        ) {
+
+            homeName +=
+                ` <span class="favorite-spread">${favorite.spread}</span>`;
+        }
+
+
+        html += `
+
+<tr>
+
+<td class="game-team ${awayClass}">
+${awayName}${awayIcon}
+</td>
+
+<td class="game-score ${awayClass}">
+${hasScores ? awayScore : "—"}
+</td>
+
+<td class="game-vs">
+vs.
+</td>
+
+<td class="game-score ${homeClass}">
+${hasScores ? homeScore : "—"}
+</td>
+
+<td class="game-team ${homeClass}">
+${homeIcon}${homeName}
+</td>
+
+</tr>
+`;
+    });
+
+
+    html += `
+
+</tbody>
+
+</table>
+`;
+
+
+    document.getElementById(
+        "gameResults"
+    ).innerHTML = html;
+}
+
+
+/* -------------------------------------------------------
+   ATS CALCULATION
+------------------------------------------------------- */
+
+function pickCovered(
+    game,
+    pickedTeam
+) {
+
+    const homeScore =
+        Number(game.home_score);
+
+    const awayScore =
+        Number(game.away_score);
+
+
+    if (
+        Number.isNaN(homeScore) ||
+        Number.isNaN(awayScore)
+    ) {
+
+        return false;
+    }
+
+
+    const homeTeam =
+        game.home_team;
+
+    const awayTeam =
+        homeTeam === game.team1
+            ? game.team2
+            : game.team1;
+
+
+    const pickedScore =
+        pickedTeam === homeTeam
+            ? homeScore
+            : awayScore;
+
+    const opponentScore =
+        pickedTeam === homeTeam
+            ? awayScore
+            : homeScore;
+
+
+    const spread =
+        parseSpreadForTeam(
+            game.spread,
+            pickedTeam
+        );
+
+
+    if (spread === null) {
+        return false;
+    }
+
+
+    const adjustedScore =
+        pickedScore + spread;
+
+
+    /*
+        PUSH COUNTS AS A WIN
+    */
+
+    return adjustedScore >= opponentScore;
+}
+
+
+/* -------------------------------------------------------
+   MAIN LIVE LOAD
+------------------------------------------------------- */
+
+async function loadLivePicks() {
+
+    const selectedWeek =
+        parseInt(
+            document.getElementById(
+                "weekSelect"
+            ).value
+        );
+
+
+    document.getElementById(
+        "weeklyStandingsTitle"
+    ).innerText =
+        "🏆 Current Week Standings — Week " +
+        selectedWeek;
+
+
+    const status =
+        document.getElementById(
+            "status"
+        );
+
+
+    status.innerText =
+        "Loading live results...";
+
+
+    /*
+        STEP 1:
+        Load selected week's games.
+    */
+
+    const {
+        data: games,
+        error: gamesError
+    } =
+        await supabaseClient
+            .from("games")
+            .select(
+                "id,week,team1,team2,home_team,spread,home_score,away_score,game_time"
+            )
+            .eq(
+                "week",
+                selectedWeek
+            );
+
+
+    if (gamesError) {
+
+        console.error(
+            gamesError
+        );
+
+        status.innerText =
+            "Error loading games.";
+
+        return;
+    }
+
+
+    /*
+        STEP 2:
+        Load all picks.
+    */
+
+    const {
+        data: allPicks,
+        error: picksError
+    } =
+        await supabaseClient
+            .from("Picks")
+            .select(
+                "player-name,game_id,team-picked,confidence,week"
+            );
+
+
+    if (picksError) {
+
+        console.error(
+            picksError
+        );
+
+        status.innerText =
+            "Error loading picks.";
+
+        return;
+    }
+
+
+    /*
+        STEP 3:
+        Build results.
+    */
+
+    const results = {};
+
+
+    games.forEach(
+        game => {
+
+            const hasScores =
+                game.home_score !== null &&
+                game.home_score !== undefined &&
+                game.away_score !== null &&
+                game.away_score !== undefined;
+
+
+            results[game.id] = {
+
+                completed:
+                    hasScores,
+
+                game:
+                    game
+            };
+        }
+    );
+
+
+    /*
+        STEP 4:
+        Game Results.
+    */
+
+    buildGameResults(
+        games
+    );
+
+
+    /*
+        STEP 5:
+        Update week dropdown.
+    */
+
+    await updateWeekDropdown();
+
+
+    /*
+        STEP 6:
+        Build player list.
+    */
+
+    const players = [];
+
+
+    allPicks.forEach(
+        pick => {
+
+            const name =
+                pick["player-name"];
+
+
+            if (
+                name &&
+                !players.includes(name)
+            ) {
+
+                players.push(name);
+            }
+        }
+    );
+
+
+    /*
+        STEP 7:
+        Weekly data.
+    */
+
+    const weeklyData = {};
+
+
+    players.forEach(
+        player => {
+
+            weeklyData[player] = {
+
+                picks: {},
+
+                points: 0
+            };
+        }
+    );
+
+
+    /*
+        Only selected-week picks
+        count toward weekly points.
+    */
+
+    allPicks
+
+        .filter(
+            pick =>
+                Number(pick.week) ===
+                selectedWeek
+        )
+
+        .forEach(
+            pick => {
+
+                const player =
+                    pick["player-name"];
+
+                const confidence =
+                    Number(
+                        pick.confidence
+                    );
+
+
+                weeklyData[player].picks[
+                    confidence
+                ] = {
+
+                    team:
+                        pick["team-picked"],
+
+                    gameId:
+                        pick.game_id
+                };
+
+
+                const result =
+                    results[
+                        pick.game_id
+                    ];
+
+
+                if (
+                    result &&
+                    result.completed
+                ) {
+
+                    if (
+                        pickCovered(
+                            result.game,
+                            pick["team-picked"]
+                        )
+                    ) {
+
+                        weeklyData[player].points +=
+                            confidence;
+                    }
+                }
+            }
+        );
+
+
+    /*
+        STEP 8:
+        Load all season games.
+    */
+
+    const {
+        data: seasonGames,
+        error: seasonGamesError
+    } =
+        await supabaseClient
+            .from("games")
+            .select(
+                "id,week,team1,team2,home_team,spread,home_score,away_score"
+            );
+
+
+    if (seasonGamesError) {
+
+        console.error(
+            "Season games error:",
+            seasonGamesError
+        );
+
+        status.innerText =
+            "Error loading season games.";
+
+        return;
+    }
+
+
+    /*
+        STEP 9:
+        Season results.
+    */
+
+    const seasonResults = {};
+
+
+    seasonGames.forEach(
+        game => {
+
+            const hasScores =
+                game.home_score !== null &&
+                game.home_score !== undefined &&
+                game.away_score !== null &&
+                game.away_score !== undefined;
+
+
+            seasonResults[game.id] = {
+
+                completed:
+                    hasScores,
+
+                game:
+                    game
+            };
+        }
+    );
+
+
+    /*
+        STEP 10:
+        Season wins.
+    */
+
+    const seasonData = {};
+
+
+    players.forEach(
+        player => {
+
+            seasonData[player] = {
+
+                wins: 0
+            };
+        }
+    );
+
+
+    allPicks.forEach(
+        pick => {
+
+            const player =
+                pick["player-name"];
+
+            const result =
+                seasonResults[
+                    pick.game_id
+                ];
+
+
+            if (
+                result &&
+                result.completed
+            ) {
+
+                if (
+                    pickCovered(
+                        result.game,
+                        pick["team-picked"]
+                    )
+                ) {
+
+                    seasonData[player].wins++;
+                }
+            }
+        }
+    );
+
+
+    /*
+        STEP 11:
+        Weekly standings.
+    */
+
+    const weeklyPlayers =
+        [...players].sort(
+            (a, b) =>
+                weeklyData[b].points -
+                weeklyData[a].points
+        );
+
+
+    let weeklyHtml = `
+
+<table>
+
+<thead>
+
+<tr>
+<th>Rank</th>
+<th>Player</th>
+<th>Confidence Points</th>
+</tr>
+
+</thead>
+
+<tbody>
+`;
+
+
+    weeklyPlayers.forEach(
+        (player, index) => {
+
+            weeklyHtml += `
+
+<tr>
+
+<td>
+${index + 1}
+</td>
+
+<td>
+<strong>${player}</strong>
+</td>
+
+<td class="total">
+${weeklyData[player].points}
+</td>
+
+</tr>
+`;
+        }
+    );
+
+
+    weeklyHtml += `
+
+</tbody>
+
+</table>
+`;
+
+
+    document.getElementById(
+        "weeklyStandings"
+    ).innerHTML =
+        weeklyHtml;
+
+
+    /*
+        STEP 12:
+        Season standings.
+    */
+
+    const seasonPlayers =
+        [...players].sort(
+            (a, b) =>
+                seasonData[b].wins -
+                seasonData[a].wins
+        );
+
+
+    let seasonHtml = `
+
+<table>
+
+<thead>
+
+<tr>
+<th>Rank</th>
+<th>Player</th>
+<th>Total Wins</th>
+</tr>
+
+</thead>
+
+<tbody>
+`;
+
+
+    seasonPlayers.forEach(
+        (player, index) => {
+
+            seasonHtml += `
+
+<tr>
+
+<td>
+${index + 1}
+</td>
+
+<td>
+<strong>${player}</strong>
+</td>
+
+<td class="season-win">
+${seasonData[player].wins}
+</td>
+
+</tr>
+`;
+        }
+    );
+
+
+    seasonHtml += `
+
+</tbody>
+
+</table>
+`;
+
+
+    document.getElementById(
+        "seasonStandings"
+    ).innerHTML =
+        seasonHtml;
+
+
+    /*
+        STEP 13:
+        Player data.
+    */
+
+    const playerData = {};
+
+
+    players.forEach(
+        player => {
+
+            playerData[player] = {
+
+                picks:
+                    weeklyData[player].picks,
+
+                points:
+                    weeklyData[player].points
+            };
+        }
+    );
+
+
+    /*
+        Players are displayed in
+        current-week standings order.
+    */
+
+    const displayPlayers =
+        [...players].sort(
+            (a, b) =>
+                weeklyData[b].points -
+                weeklyData[a].points
+        );
+
+
+    let html = `
+
+<table>
+
+<thead>
+
+<tr>
+
+<th class="confidence">
+Confidence
+</th>
+`;
+
+
+    displayPlayers.forEach(
+        player => {
+
+            html += `
+
+<th class="player-header">
+${player}
+</th>
+`;
+        }
+    );
+
+
+    html += `
+
+</tr>
+
+</thead>
+
+<tbody>
+`;
+
+
+    /*
+        Confidence 10 through 1.
+    */
+
+    for (
+        let confidence = 10;
+        confidence >= 1;
+        confidence--
+    ) {
+
+        html += `
+
+<tr>
+
+<td class="confidence">
+${confidence}
+</td>
+`;
+
+
+        displayPlayers.forEach(
+            player => {
+
+                const pick =
+                    playerData[player]
+                        .picks[confidence];
+
+
+                if (!pick) {
+
+                    html += `
+
+<td class="pending">
+—
+</td>
+`;
+
+                    return;
+                }
+
+
+                const result =
+                    results[
+                        pick.gameId
+                    ];
+
+
+                let className =
+                    "pending";
+
+
+                if (
+                    result &&
+                    result.completed
+                ) {
+
+                    if (
+                        pickCovered(
+                            result.game,
+                            pick.team
+                        )
+                    ) {
+
+                        className =
+                            "correct";
+
+                    } else {
+
+                        className =
+                            "incorrect";
+                    }
+                }
+
+
+                const mascot =
+                    getMascotName(
+                        pick.team
+                    );
+
+
+                html += `
+
+<td class="pick ${className}">
+${mascot}
+</td>
+`;
+            }
+        );
+
+
+        html += `
+
+</tr>
+`;
+    }
+
+
+    /*
+        TOTAL ROW
+    */
+
+    html += `
+
+<tr>
+
+<td class="confidence">
+TOTAL
+</td>
+`;
+
+
+    displayPlayers.forEach(
+        player => {
+
+            html += `
+
+<td class="total">
+${playerData[player].points}
+</td>
+`;
+        }
+    );
+
+
+    html += `
+
+</tr>
+
+</tbody>
+
+</table>
+`;
+
+
+    document.getElementById(
+        "liveTable"
+    ).innerHTML =
+        html;
+
+
+    /*
+        Finished successfully.
+    */
+
+    status.innerText =
+        "Last updated: " +
+        new Date().toLocaleTimeString();
+}
+
+
+/* -------------------------------------------------------
+   INITIAL LOAD
+------------------------------------------------------- */
+
+updateWeekDropdown()
+    .then(() => {
+
+        loadLivePicks();
+
+    });
+
+
+/* -------------------------------------------------------
+   AUTO REFRESH EVERY 5 MINUTES
+------------------------------------------------------- */
+
+setInterval(
+    async () => {
+
+        await updateWeekDropdown();
+
+        loadLivePicks();
+
+    },
+    300000
+);
+
+</script>
+
+</body>
+</html>
+```
