@@ -42,27 +42,6 @@ main {
     box-shadow: 0 3px 10px rgba(0,0,0,0.08);
 }
 
-select {
-    width: 100%;
-    padding: 10px;
-    margin: 8px 0 15px;
-    box-sizing: border-box;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    font-size: 16px;
-}
-
-button {
-    width: 100%;
-    padding: 13px;
-    border: none;
-    border-radius: 7px;
-    background: #2563eb;
-    color: white;
-    font-size: 17px;
-    cursor: pointer;
-}
-
 table {
     width: 100%;
     border-collapse: collapse;
@@ -95,14 +74,6 @@ th:first-child {
     font-size: 18px;
 }
 
-#status {
-    font-weight: bold;
-}
-
-.success {
-    color: #15803d;
-}
-
 .error {
     color: #dc2626;
 }
@@ -132,70 +103,15 @@ th:first-child {
 <main>
 
 
-<!-- WEEKLY STANDINGS -->
+<!-- WEEKLY WINNERS -->
 
 <div class="card">
 
-<h2>Weekly Standings</h2>
+<h2>🏆 Weekly Winners</h2>
 
-<select id="weekSelect">
-
-<option value="1">Week 1</option>
-
-<option value="2">Week 2</option>
-
-<option value="3">Week 3</option>
-
-<option value="4">Week 4</option>
-
-<option value="5">Week 5</option>
-
-<option value="6">Week 6</option>
-
-<option value="7">Week 7</option>
-
-<option value="8">Week 8</option>
-
-<option value="9">Week 9</option>
-
-<option value="10">Week 10</option>
-
-<option value="11">Week 11</option>
-
-<option value="12">Week 12</option>
-
-<option value="13">Week 13</option>
-
-<option value="14">Week 14</option>
-
-<option value="15">Week 15</option>
-
-<option value="16">Week 16</option>
-
-<option value="17">Week 17</option>
-
-<option value="18">Week 18</option>
-
-</select>
-
-
-<button type="button" onclick="loadLeaderboard()">
-Load Week
-</button>
-
-
-<p id="status">Loading...</p>
-
+<div id="weeklyWinners">
+Loading weekly winners...
 </div>
-
-
-<div class="card">
-
-<h2 id="leaderboardTitle">
-Week 1 Standings
-</h2>
-
-<div id="leaderboard"></div>
 
 </div>
 
@@ -208,19 +124,6 @@ Week 1 Standings
 
 <div id="seasonLeaderboard">
 Loading season standings...
-</div>
-
-</div>
-
-
-<!-- WEEKLY WINNERS -->
-
-<div class="card">
-
-<h2>🏆 Weekly Winners</h2>
-
-<div id="weeklyWinners">
-Loading weekly winners...
 </div>
 
 </div>
@@ -460,436 +363,6 @@ function pickIsWin(pick, game) {
     */
 
     return atsResult >= 0;
-
-}
-
-
-// ==================================================
-// UPDATE WEEK DROPDOWN
-//
-// Completed weeks display:
-//
-// Week 1 ✓
-//
-// They remain selectable.
-// ==================================================
-
-async function updateWeekDropdown() {
-
-    const select =
-        document.getElementById("weekSelect");
-
-    const currentWeek =
-        select.value;
-
-
-    const {
-        data: games,
-        error
-    } =
-        await supabaseClient
-
-        .from("games")
-
-        .select("week,Winner")
-
-        .gte("week", 1)
-
-        .lte("week", 18);
-
-
-    if (error) {
-
-        console.error(
-            "Error loading week status:",
-            error
-        );
-
-        return;
-
-    }
-
-
-    select.innerHTML = "";
-
-
-    for (
-        let week = 1;
-        week <= 18;
-        week++
-    ) {
-
-        const weekGames =
-            games.filter(
-                game =>
-                    Number(game.week) === week
-            );
-
-
-        /*
-           A week is complete only when
-           every game has a valid Winner.
-        */
-
-        const completed =
-            weekGames.length > 0 &&
-            weekGames.every(
-                game =>
-                    isGameCompleted(game)
-            );
-
-
-        const option =
-            document.createElement("option");
-
-
-        option.value =
-            week;
-
-
-        option.textContent =
-            completed
-                ? "Week " + week + " ✓"
-                : "Week " + week;
-
-
-        select.appendChild(option);
-
-    }
-
-
-    /*
-       Keep the week the user was viewing.
-    */
-
-    if (
-        currentWeek &&
-        document.querySelector(
-            `#weekSelect option[value="${currentWeek}"]`
-        )
-    ) {
-
-        select.value =
-            currentWeek;
-
-    } else {
-
-        select.value = "1";
-
-    }
-
-}
-
-
-// ==================================================
-// LOAD WEEKLY LEADERBOARD
-// ==================================================
-
-async function loadLeaderboard() {
-
-    const week =
-        parseInt(
-            document
-                .getElementById("weekSelect")
-                .value
-        );
-
-    const status =
-        document.getElementById("status");
-
-    const leaderboard =
-        document.getElementById("leaderboard");
-
-
-    status.className = "";
-
-    status.innerText =
-        "Loading scores...";
-
-    leaderboard.innerHTML = "";
-
-
-    // ==================================================
-    // GET GAMES
-    // ==================================================
-
-    const {
-        data: games,
-        error: gamesError
-    } =
-        await supabaseClient
-
-        .from("games")
-
-        .select(
-            "id,team1,team2,spread,home_team,game_time,Winner,home_score,away_score"
-        )
-
-        .eq("week", week);
-
-
-    if (gamesError) {
-
-        console.error(gamesError);
-
-        status.className =
-            "error";
-
-        status.innerText =
-            "Error loading games: " +
-            gamesError.message;
-
-        return;
-
-    }
-
-
-    // ==================================================
-    // GET PICKS
-    // ==================================================
-
-    const {
-        data: picks,
-        error: picksError
-    } =
-        await supabaseClient
-
-        .from("Picks")
-
-        .select(
-            "player-name,game_id,team-picked,confidence,week"
-        )
-
-        .eq("week", week);
-
-
-    if (picksError) {
-
-        console.error(picksError);
-
-        status.className =
-            "error";
-
-        status.innerText =
-            "Error loading picks: " +
-            picksError.message;
-
-        return;
-
-    }
-
-
-    if (
-        !picks ||
-        picks.length === 0
-    ) {
-
-        document.getElementById(
-            "leaderboardTitle"
-        ).innerText =
-            "Week " +
-            week +
-            " Standings";
-
-        status.innerText =
-            "No picks have been submitted for Week " +
-            week +
-            ".";
-
-        return;
-
-    }
-
-
-    // ==================================================
-    // GAME LOOKUP
-    // ==================================================
-
-    const gameMap = {};
-
-    games.forEach(game => {
-
-        gameMap[game.id] =
-            game;
-
-    });
-
-
-    // ==================================================
-    // PLAYER SCORES
-    // ==================================================
-
-    const scores = {};
-
-
-    picks.forEach(pick => {
-
-        const player =
-            pick["player-name"];
-
-
-        if (!scores[player]) {
-
-            scores[player] = {
-
-                score: 0,
-
-                correct: 0,
-
-                games: 0
-
-            };
-
-        }
-
-
-        scores[player].games++;
-
-
-        const game =
-            gameMap[pick.game_id];
-
-
-        if (!game) {
-
-            return;
-
-        }
-
-
-        if (
-            pickIsWin(
-                pick,
-                game
-            )
-        ) {
-
-            scores[player].score +=
-                Number(pick.confidence);
-
-            scores[player].correct++;
-
-        }
-
-    });
-
-
-    // ==================================================
-    // SORT BY WINS
-    // ==================================================
-
-    const players =
-        Object.keys(scores);
-
-
-    players.sort(
-        (a, b) => {
-
-            if (
-                scores[b].correct !==
-                scores[a].correct
-            ) {
-
-                return (
-                    scores[b].correct -
-                    scores[a].correct
-                );
-
-            }
-
-
-            return (
-                scores[b].score -
-                scores[a].score
-            );
-
-        }
-    );
-
-
-    // ==================================================
-    // DISPLAY
-    // ==================================================
-
-    document.getElementById(
-        "leaderboardTitle"
-    ).innerText =
-        "Week " +
-        week +
-        " Standings";
-
-
-    let html = `
-
-<table>
-
-<thead>
-
-<tr>
-
-<th>Rank</th>
-
-<th>Player</th>
-
-<th>Wins</th>
-
-<th>Confidence Points</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-`;
-
-
-    players.forEach(
-        (player, index) => {
-
-            html += `
-
-<tr>
-
-<td class="rank">
-${index + 1}
-</td>
-
-<td>
-${player}
-</td>
-
-<td class="total">
-${scores[player].correct}
-</td>
-
-<td>
-${scores[player].score}
-</td>
-
-</tr>
-`;
-
-        }
-    );
-
-
-    html += `
-
-</tbody>
-
-</table>
-`;
-
-
-    leaderboard.innerHTML =
-        html;
-
-
-    status.className =
-        "success";
-
-    status.innerText =
-        "Scores loaded successfully.";
 
 }
 
@@ -1389,17 +862,9 @@ ${rows}
 // START
 // ==================================================
 
-updateWeekDropdown()
-    .then(() => {
-
-        loadLeaderboard();
-
-    });
-
+loadWeeklyWinners();
 
 loadSeasonLeaderboard();
-
-loadWeeklyWinners();
 
 
 // ==================================================
@@ -1408,13 +873,9 @@ loadWeeklyWinners();
 
 setInterval(() => {
 
-    updateWeekDropdown();
-
-    loadLeaderboard();
+    loadWeeklyWinners();
 
     loadSeasonLeaderboard();
-
-    loadWeeklyWinners();
 
 }, 60000);
 
