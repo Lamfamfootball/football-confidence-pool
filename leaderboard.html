@@ -1,63 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
 <meta charset="UTF-8">
-
-<meta name="viewport"
-content="width=device-width, initial-scale=1.0">
-
-<title>LamFam Football Pool 2026-2027 Leaderboard</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LamFam 2026-2027 Leaderboard</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
 <style>
-
 body {
-    font-family: Arial, sans-serif;
     margin: 0;
-    background: #f4f4f4;
-    color: #111827;
+    font-family: Arial, sans-serif;
+    background: #f4f6f8;
+    color: #222;
 }
 
 header {
-    background: #111827;
+    background: #1f2937;
     color: white;
     text-align: center;
-    padding: 25px 15px;
+    padding: 20px;
 }
 
-main {
-    max-width: 750px;
+header h1 {
+    margin: 0;
+    font-size: 28px;
+}
+
+.container {
+    max-width: 1200px;
     margin: 20px auto;
-    padding: 15px;
+    padding: 0 15px;
 }
 
 .card {
     background: white;
+    border-radius: 12px;
     padding: 20px;
-    margin-bottom: 20px;
-    border-radius: 10px;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    margin-bottom: 25px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.card h2 {
+    margin-top: 0;
+    text-align: center;
+}
+
+.table-container {
+    overflow-x: auto;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 15px;
+    min-width: 500px;
 }
 
 th,
 td {
-    padding: 12px 8px;
+    padding: 10px 12px;
     border-bottom: 1px solid #ddd;
     text-align: center;
+    white-space: nowrap;
 }
 
 th {
-    background: #111827;
-    color: white;
+    background: #f0f2f5;
+    font-weight: bold;
 }
 
 td:first-child,
@@ -65,824 +74,923 @@ th:first-child {
     text-align: left;
 }
 
+tr:last-child td {
+    border-bottom: none;
+}
+
 .rank {
     font-weight: bold;
+    width: 50px;
 }
 
-.total {
+.player {
     font-weight: bold;
-    font-size: 18px;
-}
-
-.error {
-    color: #dc2626;
 }
 
 .winner {
     font-weight: bold;
-    font-size: 18px;
 }
 
+.total-column {
+    font-weight: bold;
+    background: #f0f2f5;
+}
+
+.week-column {
+    min-width: 65px;
+}
+
+.loading {
+    text-align: center;
+    padding: 20px;
+    color: #666;
+}
+
+.no-data {
+    text-align: center;
+    padding: 20px;
+    color: #777;
+}
+
+@media (max-width: 600px) {
+    header h1 {
+        font-size: 23px;
+    }
+
+    .card {
+        padding: 12px;
+    }
+
+    th,
+    td {
+        padding: 8px;
+        font-size: 14px;
+    }
+}
 </style>
-
 </head>
-
 
 <body>
 
-
 <header>
-
-<h1>🏈 LamFam 2026-2027 Football Pool</h1>
-
-<p>Leaderboard</p>
-
+    <h1>LamFam 2026-2027 Leaderboard</h1>
 </header>
 
+<div class="container">
 
-<main>
+    <!-- WEEKLY WINNERS -->
+    <div class="card">
+        <h2>🏆 Weekly Winners</h2>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Week</th>
+                        <th>Winner</th>
+                        <th>Confidence Points</th>
+                    </tr>
+                </thead>
+                <tbody id="weeklyWinnersBody">
+                    <tr>
+                        <td colspan="3" class="loading">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
 
-<!-- WEEKLY WINNERS -->
+    <!-- WINS BY WEEK -->
+    <div class="card">
+        <h2>📈 Wins by Week — Progression</h2>
 
-<div class="card">
+        <div class="table-container">
+            <table id="winsByWeekTable">
+                <thead id="winsByWeekHead">
+                    <tr>
+                        <th>Player</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
 
-<h2>🏆 Weekly Winners</h2>
+                <tbody id="winsByWeekBody">
+                    <tr>
+                        <td colspan="2" class="loading">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-<div id="weeklyWinners">
-Loading weekly winners...
+
+    <!-- SEASON STANDINGS -->
+    <div class="card">
+        <h2>🏆 Season Standings</h2>
+
+        <div class="table-container">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Player</th>
+                        <th>Total Wins</th>
+                        <th>Confidence Points</th>
+                    </tr>
+                </thead>
+
+                <tbody id="seasonLeaderboardBody">
+                    <tr>
+                        <td colspan="4" class="loading">Loading...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
-
-</div>
-
-
-<!-- SEASON STANDINGS -->
-
-<div class="card">
-
-<h2>🏆 Season Standings</h2>
-
-<div id="seasonLeaderboard">
-Loading season standings...
-</div>
-
-</div>
-
-
-</main>
 
 
 <script>
 
+const SUPABASE_URL = "https://YOUR-PROJECT.supabase.co";
+const SUPABASE_ANON_KEY = "YOUR-ANON-KEY";
 
-// ==================================================
-// SUPABASE
-// ==================================================
-
-const SUPABASE_URL =
-"https://bgkcnsnydchfghyhwurw.supabase.co";
-
-const SUPABASE_KEY =
-"sb_publishable_CzYkbEOaBmQbXroYYOXDbA_6NX6kZLz";
-
-const supabaseClient =
-supabase.createClient(
+const supabase = window.supabase.createClient(
     SUPABASE_URL,
-    SUPABASE_KEY
+    SUPABASE_ANON_KEY
 );
 
 
-// ==================================================
-// NORMALIZE TEAM NAME
-// ==================================================
-
-function normalizeTeam(team) {
-
-    if (!team) return "";
-
-    return String(team)
-        .trim()
-        .toLowerCase()
-        .replace(/\s+/g, " ");
-
-}
-
-
-// ==================================================
-// DETERMINE IF GAME IS ACTUALLY COMPLETED
-// ==================================================
+/* =========================================================
+   GAME COMPLETION
+========================================================= */
 
 function isGameCompleted(game) {
 
-    if (!game) {
-        return false;
-    }
-
-    const winner =
-        game.Winner;
+    const winner = game.Winner;
 
     if (
         winner === null ||
-        winner === undefined
-    ) {
-        return false;
-    }
-
-    const winnerText =
-        String(winner).trim();
-
-    if (
-        winnerText === "" ||
-        winnerText.toLowerCase() === "null" ||
-        winnerText.toLowerCase() === "tbd"
+        winner === undefined ||
+        winner === "" ||
+        String(winner).toLowerCase() === "null" ||
+        String(winner).toLowerCase() === "tbd"
     ) {
         return false;
     }
 
     return true;
-
 }
 
 
-// ==================================================
-// GET SPREAD FOR A TEAM
-// ==================================================
+/* =========================================================
+   SPREAD
+========================================================= */
 
-function getTeamSpread(spread, team) {
+function getTeamSpread(game, team) {
 
-    if (!spread || !team) {
-        return null;
+    const spread = Number(game.spread);
+
+    if (Number.isNaN(spread)) {
+        return 0;
     }
 
-    const parts =
-        String(spread).split("/");
+    /*
+       The database stores the spread for the favorite.
+       If team1 is the favorite, team1 gets the negative spread.
+       If team2 is the favorite, team2 gets the negative spread.
+    */
 
-    const target =
-        normalizeTeam(team);
-
-    for (const part of parts) {
-
-        const match =
-            part.trim().match(
-                /([+-]\d+(?:\.\d+)?)\s*$/
-            );
-
-        if (!match) {
-            continue;
-        }
-
-        const spreadNumber =
-            Number(match[1]);
-
-        const teamName =
-            part
-                .replace(
-                    /([+-]\d+(?:\.\d+)?)\s*$/,
-                    ""
-                )
-                .trim();
-
-        if (
-            normalizeTeam(teamName) ===
-            target
-        ) {
-
-            return spreadNumber;
-
-        }
-
+    if (game.team1 === team) {
+        return spread;
     }
 
-    return null;
+    if (game.team2 === team) {
+        return -spread;
+    }
 
+    return 0;
 }
 
 
-// ==================================================
-// DETERMINE IF PICK WON ATS
-// ==================================================
+/* =========================================================
+   ATS RESULT
+========================================================= */
 
 function pickIsWin(pick, game) {
-
-    if (!pick || !game) {
-        return false;
-    }
 
     if (!isGameCompleted(game)) {
         return false;
     }
 
-    const pickedTeam =
-        pick["team-picked"];
+    const pickedTeam = pick["team-picked"];
 
-    const spread =
-        getTeamSpread(
-            game.spread,
-            pickedTeam
-        );
-
-    if (spread === null) {
-
-        console.warn(
-            "Could not determine spread for:",
-            pickedTeam,
-            game.spread
-        );
-
+    if (!pickedTeam) {
         return false;
-
     }
 
-    const homeScore =
-        Number(game.home_score);
+    const team1 = game.team1;
+    const team2 = game.team2;
 
-    const awayScore =
-        Number(game.away_score);
-
-    if (
-        !Number.isFinite(homeScore) ||
-        !Number.isFinite(awayScore)
-    ) {
-
-        return false;
-
-    }
+    const homeTeam = game.home_team;
 
     let pickedScore;
     let opponentScore;
 
-    const picked =
-        normalizeTeam(pickedTeam);
+    if (pickedTeam === homeTeam) {
 
-    const team1 =
-        normalizeTeam(game.team1);
-
-    const team2 =
-        normalizeTeam(game.team2);
-
-
-    /*
-       team1 is the AWAY team.
-       team2 is the HOME team.
-    */
-
-    if (picked === team1) {
-
-        pickedScore = awayScore;
-        opponentScore = homeScore;
-
-    } else if (picked === team2) {
-
-        pickedScore = homeScore;
-        opponentScore = awayScore;
+        pickedScore = Number(game.home_score);
+        opponentScore = Number(game.away_score);
 
     } else {
 
-        console.warn(
-            "Picked team does not match game:",
-            pickedTeam,
-            game.team1,
-            game.team2
-        );
-
-        return false;
-
+        pickedScore = Number(game.away_score);
+        opponentScore = Number(game.home_score);
     }
 
+    if (
+        Number.isNaN(pickedScore) ||
+        Number.isNaN(opponentScore)
+    ) {
+        return false;
+    }
+
+    const spread = getTeamSpread(game, pickedTeam);
 
     const atsResult =
-        (pickedScore - opponentScore) + spread;
-
+        (pickedScore + spread) - opponentScore;
 
     /*
-       Positive = covers
-       Zero = push
-       Negative = does not cover
-
        Push counts as a win.
     */
 
     return atsResult >= 0;
-
 }
 
 
-// ==================================================
-// SEASON STANDINGS
-// ==================================================
-
-async function loadSeasonLeaderboard() {
-
-    const season =
-        document.getElementById(
-            "seasonLeaderboard"
-        );
-
-
-    const {
-        data: games,
-        error: gamesError
-    } =
-        await supabaseClient
-
-        .from("games")
-
-        .select(
-            "id,week,team1,team2,spread,home_team,game_time,Winner,home_score,away_score"
-        )
-
-        .gte("week", 1)
-
-        .lte("week", 18);
-
-
-    if (gamesError) {
-
-        season.innerHTML =
-            "<p class='error'>Unable to load season games.</p>";
-
-        return;
-
-    }
-
-
-    const {
-        data: picks,
-        error: picksError
-    } =
-        await supabaseClient
-
-        .from("Picks")
-
-        .select(
-            "player-name,game_id,team-picked,confidence,week"
-        )
-
-        .gte("week", 1)
-
-        .lte("week", 18);
-
-
-    if (picksError) {
-
-        season.innerHTML =
-            "<p class='error'>Unable to load season picks.</p>";
-
-        return;
-
-    }
-
-
-    if (
-        !picks ||
-        picks.length === 0
-    ) {
-
-        season.innerHTML =
-            "<p>No season picks have been submitted yet.</p>";
-
-        return;
-
-    }
-
-
-    const gameMap = {};
-
-    games.forEach(game => {
-
-        gameMap[game.id] =
-            game;
-
-    });
-
-
-    const players = {};
-
-
-    picks.forEach(pick => {
-
-        const player =
-            pick["player-name"];
-
-
-        const game =
-            gameMap[pick.game_id];
-
-
-        if (!players[player]) {
-
-            players[player] = {
-
-                wins: 0,
-
-                points: 0
-
-            };
-
-        }
-
-
-        if (!game) {
-            return;
-        }
-
-
-        if (
-            pickIsWin(
-                pick,
-                game
-            )
-        ) {
-
-            players[player].wins++;
-
-            players[player].points +=
-                Number(pick.confidence);
-
-        }
-
-    });
-
-
-    const names =
-        Object.keys(players);
-
-
-    names.sort(
-        (a, b) => {
-
-            if (
-                players[b].wins !==
-                players[a].wins
-            ) {
-
-                return (
-                    players[b].wins -
-                    players[a].wins
-                );
-
-            }
-
-
-            return (
-                players[b].points -
-                players[a].points
-            );
-
-        }
-    );
-
-
-    let html = `
-
-<table>
-
-<thead>
-
-<tr>
-
-<th>Rank</th>
-
-<th>Player</th>
-
-<th>Total Wins</th>
-
-<th>Confidence Points</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-`;
-
-
-    names.forEach(
-        (player, index) => {
-
-            html += `
-
-<tr>
-
-<td class="rank">
-${index + 1}
-</td>
-
-<td>
-${player}
-</td>
-
-<td class="total">
-${players[player].wins}
-</td>
-
-<td>
-${players[player].points}
-</td>
-
-</tr>
-`;
-
-        }
-    );
-
-
-    html += `
-
-</tbody>
-
-</table>
-`;
-
-
-    season.innerHTML =
-        html;
-
-}
-
-
-// ==================================================
-// WEEKLY WINNERS
-// ==================================================
+/* =========================================================
+   WEEKLY WINNERS
+========================================================= */
 
 async function loadWeeklyWinners() {
 
-    const container =
-        document.getElementById(
-            "weeklyWinners"
+    const tbody =
+        document.getElementById("weeklyWinnersBody");
+
+    tbody.innerHTML =
+        `<tr><td colspan="3" class="loading">Loading...</td></tr>`;
+
+    try {
+
+        const { data: games, error: gamesError } =
+            await supabase
+                .from("games")
+                .select("*")
+                .gte("week", 1)
+                .lte("week", 18);
+
+        if (gamesError) throw gamesError;
+
+
+        const { data: picks, error: picksError } =
+            await supabase
+                .from("Picks")
+                .select("*")
+                .gte("week", 1)
+                .lte("week", 18);
+
+        if (picksError) throw picksError;
+
+
+        const weeklyResults = [];
+
+
+        for (let week = 1; week <= 18; week++) {
+
+            const weekGames =
+                games.filter(g => Number(g.week) === week);
+
+            const completedGames =
+                weekGames.filter(isGameCompleted);
+
+            if (completedGames.length === 0) {
+                continue;
+            }
+
+
+            const weekPicks =
+                picks.filter(p => Number(p.week) === week);
+
+
+            const players = {};
+
+
+            weekPicks.forEach(pick => {
+
+                const player =
+                    pick["player-name"] || "Unknown";
+
+                const game =
+                    weekGames.find(
+                        g => String(g.id) === String(pick.game_id)
+                    );
+
+                if (!game) return;
+
+                if (!players[player]) {
+                    players[player] = 0;
+                }
+
+                if (pickIsWin(pick, game)) {
+
+                    players[player] +=
+                        Number(pick.confidence) || 0;
+                }
+
+            });
+
+
+            const entries =
+                Object.entries(players);
+
+            if (entries.length === 0) {
+                continue;
+            }
+
+
+            const highest =
+                Math.max(...entries.map(e => e[1]));
+
+
+            const winners =
+                entries
+                    .filter(e => e[1] === highest)
+                    .map(e => e[0]);
+
+
+            weeklyResults.push({
+                week,
+                winners,
+                points: highest
+            });
+        }
+
+
+        if (weeklyResults.length === 0) {
+
+            tbody.innerHTML =
+                `<tr>
+                    <td colspan="3" class="no-data">
+                        No completed weeks yet.
+                    </td>
+                </tr>`;
+
+            return;
+        }
+
+
+        tbody.innerHTML = "";
+
+
+        weeklyResults.forEach(result => {
+
+            const row =
+                document.createElement("tr");
+
+            row.innerHTML = `
+                <td>Week ${result.week}</td>
+                <td class="winner">
+                    ${result.winners.join(", ")}
+                </td>
+                <td>${result.points}</td>
+            `;
+
+            tbody.appendChild(row);
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Error loading weekly winners:",
+            error
         );
 
-
-    const {
-        data: games,
-        error: gamesError
-    } =
-        await supabaseClient
-
-        .from("games")
-
-        .select(
-            "id,week,team1,team2,spread,home_team,game_time,Winner,home_score,away_score"
-        )
-
-        .gte("week", 1)
-
-        .lte("week", 18);
-
-
-    if (gamesError) {
-
-        container.innerHTML =
-            "<p class='error'>Unable to load weekly winners.</p>";
-
-        return;
-
+        tbody.innerHTML =
+            `<tr>
+                <td colspan="3" class="no-data">
+                    Error loading weekly winners.
+                </td>
+            </tr>`;
     }
+}
 
 
-    const {
-        data: picks,
-        error: picksError
-    } =
-        await supabaseClient
+/* =========================================================
+   WINS BY WEEK — PROGRESSION
+========================================================= */
 
-        .from("Picks")
+async function loadWinsByWeek() {
 
-        .select(
-            "player-name,game_id,team-picked,confidence,week"
-        )
+    const head =
+        document.getElementById("winsByWeekHead");
 
-        .gte("week", 1)
-
-        .lte("week", 18);
+    const body =
+        document.getElementById("winsByWeekBody");
 
 
-    if (picksError) {
-
-        container.innerHTML =
-            "<p class='error'>Unable to load weekly winners.</p>";
-
-        return;
-
-    }
+    body.innerHTML =
+        `<tr>
+            <td colspan="2" class="loading">
+                Loading...
+            </td>
+        </tr>`;
 
 
-    const gameMap = {};
+    try {
+
+        const { data: games, error: gamesError } =
+            await supabase
+                .from("games")
+                .select("*")
+                .gte("week", 1)
+                .lte("week", 18);
+
+        if (gamesError) throw gamesError;
 
 
-    games.forEach(game => {
+        const { data: picks, error: picksError } =
+            await supabase
+                .from("Picks")
+                .select("*")
+                .gte("week", 1)
+                .lte("week", 18);
 
-        gameMap[game.id] =
-            game;
-
-    });
-
-
-    const weekly = {};
-
-
-    picks.forEach(pick => {
-
-        const player =
-            pick["player-name"];
+        if (picksError) throw picksError;
 
 
-        const game =
-            gameMap[pick.game_id];
+        /*
+           Find the latest week that actually has
+           completed games.
+        */
 
+        let latestCompletedWeek = 0;
 
-        if (!game) {
-            return;
-        }
+        for (let week = 1; week <= 18; week++) {
 
-
-        if (
-            !isGameCompleted(game)
-        ) {
-
-            return;
-
-        }
-
-
-        const week =
-            game.week;
-
-
-        if (!weekly[week]) {
-
-            weekly[week] = {};
-
-        }
-
-
-        if (
-            !weekly[week][player]
-        ) {
-
-            weekly[week][player] = 0;
-
-        }
-
-
-        if (
-            pickIsWin(
-                pick,
-                game
-            )
-        ) {
-
-            weekly[week][player] +=
-                Number(pick.confidence);
-
-        }
-
-    });
-
-
-    let rows = "";
-
-
-    for (
-        let week = 1;
-        week <= 18;
-        week++
-    ) {
-
-
-        if (!weekly[week]) {
-            continue;
-        }
-
-
-        const players =
-            Object.keys(
-                weekly[week]
-            );
-
-
-        if (
-            players.length === 0
-        ) {
-
-            continue;
-
-        }
-
-
-        let highest = 0;
-
-
-        players.forEach(player => {
+            const weekGames =
+                games.filter(
+                    g => Number(g.week) === week
+                );
 
             if (
-                weekly[week][player] >
-                highest
+                weekGames.some(isGameCompleted)
             ) {
+                latestCompletedWeek = week;
+            }
+        }
 
-                highest =
-                    weekly[week][player];
 
+        if (latestCompletedWeek === 0) {
+
+            body.innerHTML =
+                `<tr>
+                    <td colspan="2" class="no-data">
+                        No completed games yet.
+                    </td>
+                </tr>`;
+
+            return;
+        }
+
+
+        /*
+           Get all players.
+        */
+
+        const playerNames = new Set();
+
+        picks.forEach(pick => {
+
+            if (pick["player-name"]) {
+                playerNames.add(
+                    pick["player-name"]
+                );
             }
 
         });
 
 
-        const winners =
-            players.filter(
-                player =>
-                    weekly[week][player] ===
-                    highest
+        /*
+           Build wins for every player/week.
+        */
+
+        const playerWeeklyWins = {};
+
+
+        playerNames.forEach(player => {
+
+            playerWeeklyWins[player] = {};
+
+            for (
+                let week = 1;
+                week <= latestCompletedWeek;
+                week++
+            ) {
+
+                playerWeeklyWins[player][week] = 0;
+            }
+        });
+
+
+        for (
+            let week = 1;
+            week <= latestCompletedWeek;
+            week++
+        ) {
+
+            const weekGames =
+                games.filter(
+                    g => Number(g.week) === week
+                );
+
+
+            const weekPicks =
+                picks.filter(
+                    p => Number(p.week) === week
+                );
+
+
+            weekPicks.forEach(pick => {
+
+                const player =
+                    pick["player-name"];
+
+                if (!player) return;
+
+
+                const game =
+                    weekGames.find(
+                        g =>
+                            String(g.id) ===
+                            String(pick.game_id)
+                    );
+
+
+                if (!game) return;
+
+
+                if (pickIsWin(pick, game)) {
+
+                    if (
+                        playerWeeklyWins[player] &&
+                        playerWeeklyWins[player][week]
+                        !== undefined
+                    ) {
+
+                        playerWeeklyWins[player][week]++;
+                    }
+                }
+
+            });
+        }
+
+
+        /*
+           Sort players by total wins,
+           then player name.
+        */
+
+        const sortedPlayers =
+            Array.from(playerNames).sort(
+                (a, b) => {
+
+                    let totalA = 0;
+                    let totalB = 0;
+
+
+                    for (
+                        let week = 1;
+                        week <= latestCompletedWeek;
+                        week++
+                    ) {
+
+                        totalA +=
+                            playerWeeklyWins[a][week] || 0;
+
+                        totalB +=
+                            playerWeeklyWins[b][week] || 0;
+                    }
+
+
+                    if (totalB !== totalA) {
+                        return totalB - totalA;
+                    }
+
+                    return a.localeCompare(b);
+                }
             );
 
 
-        rows += `
+        /*
+           Build header.
+        */
 
-<tr>
+        head.innerHTML = `
+            <tr>
+                <th>Player</th>
 
-<td>
-Week ${week}
-</td>
+                ${Array.from(
+                    { length: latestCompletedWeek },
+                    (_, i) =>
+                        `<th class="week-column">
+                            Week ${i + 1}
+                        </th>`
+                ).join("")}
 
-<td class="winner">
-${winners.join(", ")}
-</td>
+                <th class="total-column">
+                    Total
+                </th>
+            </tr>
+        `;
 
-<td>
-${highest}
-</td>
 
-</tr>
-`;
+        /*
+           Build rows.
+        */
 
+        body.innerHTML = "";
+
+
+        sortedPlayers.forEach(player => {
+
+            let total = 0;
+
+
+            const row =
+                document.createElement("tr");
+
+
+            let html =
+                `<td class="player">${player}</td>`;
+
+
+            for (
+                let week = 1;
+                week <= latestCompletedWeek;
+                week++
+            ) {
+
+                const wins =
+                    playerWeeklyWins[player][week] || 0;
+
+                total += wins;
+
+
+                html += `
+                    <td class="week-column">
+                        ${wins}
+                    </td>
+                `;
+            }
+
+
+            html += `
+                <td class="total-column">
+                    ${total}
+                </td>
+            `;
+
+
+            row.innerHTML = html;
+
+            body.appendChild(row);
+        });
+
+
+    } catch (error) {
+
+        console.error(
+            "Error loading wins by week:",
+            error
+        );
+
+        body.innerHTML =
+            `<tr>
+                <td colspan="2" class="no-data">
+                    Error loading wins by week.
+                </td>
+            </tr>`;
     }
-
-
-    if (rows === "") {
-
-        container.innerHTML =
-            "<p>No weekly winners yet.</p>";
-
-        return;
-
-    }
-
-
-    container.innerHTML = `
-
-<table>
-
-<thead>
-
-<tr>
-
-<th>Week</th>
-
-<th>Winner</th>
-
-<th>Confidence Points</th>
-
-</tr>
-
-</thead>
-
-<tbody>
-
-${rows}
-
-</tbody>
-
-</table>
-`;
-
 }
 
 
-// ==================================================
-// START
-// ==================================================
+/* =========================================================
+   SEASON STANDINGS
+========================================================= */
 
-loadWeeklyWinners();
+async function loadSeasonLeaderboard() {
 
-loadSeasonLeaderboard();
+    const tbody =
+        document.getElementById(
+            "seasonLeaderboardBody"
+        );
 
 
-// ==================================================
-// AUTO REFRESH EVERY 60 SECONDS
-// ==================================================
+    tbody.innerHTML =
+        `<tr>
+            <td colspan="4" class="loading">
+                Loading...
+            </td>
+        </tr>`;
+
+
+    try {
+
+        const { data: games, error: gamesError } =
+            await supabase
+                .from("games")
+                .select("*")
+                .gte("week", 1)
+                .lte("week", 18);
+
+        if (gamesError) throw gamesError;
+
+
+        const { data: picks, error: picksError } =
+            await supabase
+                .from("Picks")
+                .select("*")
+                .gte("week", 1)
+                .lte("week", 18);
+
+        if (picksError) throw picksError;
+
+
+        const players = {};
+
+
+        picks.forEach(pick => {
+
+            const player =
+                pick["player-name"];
+
+            if (!player) return;
+
+
+            if (!players[player]) {
+
+                players[player] = {
+                    wins: 0,
+                    confidence: 0
+                };
+            }
+
+
+            const game =
+                games.find(
+                    g =>
+                        String(g.id) ===
+                        String(pick.game_id)
+                );
+
+
+            if (!game) return;
+
+
+            if (pickIsWin(pick, game)) {
+
+                players[player].wins++;
+
+                players[player].confidence +=
+                    Number(pick.confidence) || 0;
+            }
+
+        });
+
+
+        const standings =
+            Object.entries(players)
+                .map(([player, stats]) => ({
+                    player,
+                    wins: stats.wins,
+                    confidence: stats.confidence
+                }))
+                .sort((a, b) => {
+
+                    if (b.wins !== a.wins) {
+                        return b.wins - a.wins;
+                    }
+
+                    if (
+                        b.confidence !==
+                        a.confidence
+                    ) {
+                        return (
+                            b.confidence -
+                            a.confidence
+                        );
+                    }
+
+                    return a.player.localeCompare(
+                        b.player
+                    );
+                });
+
+
+        tbody.innerHTML = "";
+
+
+        standings.forEach(
+            (entry, index) => {
+
+                const row =
+                    document.createElement("tr");
+
+
+                row.innerHTML = `
+                    <td class="rank">
+                        ${index + 1}
+                    </td>
+
+                    <td class="player">
+                        ${entry.player}
+                    </td>
+
+                    <td>
+                        ${entry.wins}
+                    </td>
+
+                    <td>
+                        ${entry.confidence}
+                    </td>
+                `;
+
+
+                tbody.appendChild(row);
+            }
+        );
+
+
+        if (standings.length === 0) {
+
+            tbody.innerHTML =
+                `<tr>
+                    <td colspan="4"
+                        class="no-data">
+                        No standings available yet.
+                    </td>
+                </tr>`;
+        }
+
+
+    } catch (error) {
+
+        console.error(
+            "Error loading season leaderboard:",
+            error
+        );
+
+
+        tbody.innerHTML =
+            `<tr>
+                <td colspan="4"
+                    class="no-data">
+                    Error loading season standings.
+                </td>
+            </tr>`;
+    }
+}
+
+
+/* =========================================================
+   STARTUP
+========================================================= */
+
+async function loadAll() {
+
+    await Promise.all([
+        loadWeeklyWinners(),
+        loadWinsByWeek(),
+        loadSeasonLeaderboard()
+    ]);
+}
+
+
+loadAll();
+
+
+/* =========================================================
+   AUTO REFRESH
+========================================================= */
 
 setInterval(() => {
 
-    loadWeeklyWinners();
-
-    loadSeasonLeaderboard();
+    loadAll();
 
 }, 60000);
 
-
 </script>
 
-
 </body>
-
 </html>
