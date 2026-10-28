@@ -1015,32 +1015,42 @@ async function loadLivePicks() {
 
 
     /*
+
+    /*
         STEP 2:
-        Load all picks.
+        Load ALL picks in batches so Supabase's
+        1,000-row limit does not hide players.
     */
 
-    const {
-        data: allPicks,
-        error: picksError
-    } =
-        await supabaseClient
+    let allPicks = [];
+    let from = 0;
+    const batchSize = 1000;
+
+    while (true) {
+        const {
+            data: batch,
+            error: picksError
+        } = await supabaseClient
             .from("Picks")
-            .select(
-                "player-name,game_id,team-picked,confidence,week"
-            );
+            .select('"player-name",game_id,"team-picked",confidence,week,id')
+            .order("id", { ascending: true })
+            .range(from, from + batchSize - 1);
 
+        if (picksError) {
+            console.error("Error loading picks:", picksError);
+            status.innerText = "Error loading picks.";
+            return;
+        }
 
-    if (picksError) {
+        allPicks.push(...batch);
 
-        console.error(
-            picksError
-        );
+        if (batch.length < batchSize) {
+            break;
+        }
 
-        status.innerText =
-            "Error loading picks.";
-
-        return;
+        from += batchSize;
     }
+
 
 
     /*
